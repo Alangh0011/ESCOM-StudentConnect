@@ -25,5 +25,4 @@ public class ConductorRegisterRequest {
     String Descripcion;
     String Modelo;
     String Color;
-
 }

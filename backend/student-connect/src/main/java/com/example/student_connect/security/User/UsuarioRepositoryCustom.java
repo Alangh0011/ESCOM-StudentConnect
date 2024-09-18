@@ -18,7 +18,7 @@ import java.util.Optional;
 
  */
 @Repository
-public interface UsuarioRepositoryCustom extends JpaRepository<User, Integer> {
+public interface UsuarioRepositoryCustom extends JpaRepository<User, Long> {
 
 
 
@@ -28,44 +28,14 @@ public interface UsuarioRepositoryCustom extends JpaRepository<User, Integer> {
 
      *
 
-     * @param correo El nombre de usuario del usuario a buscar.
+     * @param Correo El nombre de usuario del usuario a buscar.
 
      * @return Un objeto Optional que contiene el usuario encontrado, si existe.
 
      */
 
-    Optional<User> findByCorreo(String correo);
+    Optional<User> findByCorreo(String Correo);
 
 
-
-    /**
-
-     * Método para verificar si existe un usuario con un nombre de usuario específico.
-
-     *
-
-     * @param nombreUsuario El nombre de usuario a verificar.
-
-     * @return true si existe un usuario con el nombre de usuario especificado, false de lo contrario.
-
-     */
-
-    boolean existsByNombreUsuario(String nombreUsuario);
-
-
-
-    /**
-
-     * Método para verificar si existe un usuario con un correo electrónico específico.
-
-     *
-
-     * @param email El correo electrónico a verificar.
-
-     * @return true si existe un usuario con el correo electrónico especificado, false de lo contrario.
-
-     */
-
-    boolean existsByEmail(String email);
 
 }

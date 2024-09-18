@@ -15,7 +15,7 @@ public class PasajeroRegisterRequest {
     String Apellido_Paterno;
     String Apellido_Materno;
     String Correo;
-    String Boleta;
+    int Boleta;
     MultipartFile fotoPerfil;
     boolean aviso_privacidad;
     String Contrasena;

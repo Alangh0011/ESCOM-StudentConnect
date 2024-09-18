@@ -9,23 +9,24 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="user", uniqueConstraints = {@UniqueConstraint(columnNames = {"Correo"})})
+@Table(name="Pasajero", uniqueConstraints = {@UniqueConstraint(columnNames = {"correo"})})
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
+
     @Column(nullable = false, unique = true)
-    String Correo;
+    String correo;
 
     @Column(nullable = false)
     String Nombres;
@@ -33,12 +34,12 @@ public class User implements UserDetails {
     String Apellido_Paterno;
     String Apellido_Materno;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     int Boleta;
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    byte[] fotoPerfil; // Almacena el contenido de la imagen como un array de bytes
+    String fotoBase64;
 
     boolean aviso_privacidad;
 
@@ -47,9 +48,6 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     Role role;
-
-    public User(String correo, String contrasena, String nombres, String apellidoPaterno, String apellidoMaterno, int boleta, byte[] fotoPerfil, boolean avisoPrivacidad, Role role) {
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -63,7 +61,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.Correo;
+        return this.correo;
     }
 
     @Override

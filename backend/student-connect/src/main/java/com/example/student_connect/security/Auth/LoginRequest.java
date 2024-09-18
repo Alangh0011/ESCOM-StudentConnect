@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
     // Campos requeridos para la solicitud de inicio de sesión
-    String username; // Nombre de usuario o correo electrónico proporcionado por el usuario
-    String password; // Contraseña proporcionada por el usuario
+    String correo; // Nombre de usuario o correo electrónico proporcionado por el usuario
+    String contrasena; // Contraseña proporcionada por el usuario
 }

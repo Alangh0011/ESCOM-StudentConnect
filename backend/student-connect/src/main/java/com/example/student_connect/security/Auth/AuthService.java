@@ -10,10 +10,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
 import com.example.student_connect.security.Jwt.JwtService;
 import com.example.student_connect.security.User.Role;
 import com.example.student_connect.security.User.Conductor;
+
+import java.io.IOException;
+import java.util.Base64;
 
 @Service
 @Transactional
@@ -29,45 +31,40 @@ public class AuthService {
     private JwtService jwtService;
 
     @Autowired
-    private FileStorageService fileStorageService;
-    @Autowired
     private AuthenticationManager authenticationManager;
 
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        UserDetails user = userRepositoryCustom.findByCorreo(request.getUsername()).orElseThrow();
-        String token=jwtService.getToken(user);
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getCorreo(), request.getContrasena()));
+        UserDetails user = userRepositoryCustom.findByCorreo(request.getCorreo()).orElseThrow();
+        String token = jwtService.getToken(user);
         return AuthResponse.builder()
                 .token(token)
                 .build();
-
     }
 
-    public AuthResponse registerConductor(ConductorRegisterRequest request) {
-        // Crear nuevo conductor
-        Conductor conductor = Conductor.build(
-                request.getCorreo(),
-                passwordEncoder.encode(request.getContrasena()),
-                request.getNombres(),
-                request.getApellido_Paterno(),
-                request.getApellido_Materno(),
-                request.getBoleta(),
-                null, // Pasar `null` aquí por ahora, luego se establece después si hay una imagen
-                false, // valor por defecto para `aviso_privacidad`
-                Role.CONDUCTOR,
-                request.getPlacas(),
-                request.getDescripcion(),
-                request.getModelo(),
-                request.getColor()
-        );
-
-        // Guardar imagen de perfil (si existe)
+    public AuthResponse registerConductor(ConductorRegisterRequest request) throws IOException {
+        String fotoPerfilBase64 = null;
         if (request.getFotoPerfil() != null && !request.getFotoPerfil().isEmpty()) {
-            byte[] fotoPerfil = fileStorageService.convertToBytes(request.getFotoPerfil());
-            conductor.setFotoPerfil(fotoPerfil);
+            byte[] bytes = request.getFotoPerfil().getBytes();
+            fotoPerfilBase64 = Base64.getEncoder().encodeToString(bytes); // Convertir a Base64
         }
 
-        // Guardar conductor
+        Conductor conductor = Conductor.builder()
+                .correo(request.getCorreo())
+                .Contrasena(passwordEncoder.encode(request.getContrasena()))
+                .Nombres(request.getNombres())
+                .Apellido_Paterno(request.getApellido_Paterno())
+                .Apellido_Materno(request.getApellido_Materno())
+                .Boleta(request.getBoleta())
+                .fotoBase64(fotoPerfilBase64) // Pasar la cadena Base64
+                .aviso_privacidad(false)
+                .role(Role.CONDUCTOR)
+                .Placas(request.getPlacas())
+                .Descripcion(request.getDescripcion())
+                .Modelo(request.getModelo())
+                .Color(request.getColor())
+                .build();
+
         userRepositoryCustom.save(conductor);
 
         return AuthResponse.builder()
@@ -75,14 +72,21 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponse registerPasajero(ConductorRegisterRequest request) {
+    public AuthResponse registerPasajero(PasajeroRegisterRequest request) throws IOException {
+        String fotoPerfilBase64 = null;
+        if (request.getFotoPerfil() != null && !request.getFotoPerfil().isEmpty()) {
+            byte[] bytes = request.getFotoPerfil().getBytes();
+            fotoPerfilBase64 = Base64.getEncoder().encodeToString(bytes); // Convertir a Base64
+        }
+
         User user = User.builder()
-                .Correo(request.getCorreo())
+                .correo(request.getCorreo())
                 .Contrasena(passwordEncoder.encode(request.getContrasena()))
                 .Nombres(request.getNombres())
                 .Apellido_Paterno(request.getApellido_Paterno())
                 .Apellido_Materno(request.getApellido_Materno())
                 .Boleta(request.getBoleta())
+                .fotoBase64(fotoPerfilBase64) // Pasar la cadena Base64
                 .role(Role.PASAJERO)
                 .build();
 
@@ -91,7 +95,5 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(jwtService.getToken(user))
                 .build();
-
     }
 }
-
