@@ -39,6 +39,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .setSubject(usuario.getUsername()) // Aquí usamos el correo como "nombre de usuario"
                 .claim("roles", usuario.getAuthorities()) // Agrega los roles si tienes autoridades
+                .claim("id", usuario.getId()) // Agrega el ID del usuario
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, secret)

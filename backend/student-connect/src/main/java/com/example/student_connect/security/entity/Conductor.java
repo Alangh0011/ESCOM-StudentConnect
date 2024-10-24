@@ -12,8 +12,11 @@ public class Conductor extends Usuario {
 
     @NotBlank
     private String placas;
+    @NotBlank
     private String descripcion;
+    @NotBlank
     private String modelo;
+    @NotBlank
     private String color;
 
     public Conductor(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password, int boleta, boolean avisoPrivacidad, String placas, String descripcion, String modelo, String color, String sexo) {

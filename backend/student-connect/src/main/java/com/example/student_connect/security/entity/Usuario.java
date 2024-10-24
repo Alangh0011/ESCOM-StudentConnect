@@ -92,6 +92,7 @@ public abstract class Usuario implements UserDetails {
         return email; // Usamos el email como nombre de usuario
     }
 
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -112,5 +113,7 @@ public abstract class Usuario implements UserDetails {
         return true;
     }
 
-
+    public int getId() {
+        return id;
+    }
 }
