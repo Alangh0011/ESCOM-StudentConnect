@@ -42,7 +42,7 @@ public class RutaController {
 
     // Endpoint para obtener todas las rutas de un conductor específico
     @GetMapping("/conductor/{idConductor}")
-    public ResponseEntity<List<Ruta>> getRutasByConductor(@PathVariable("idConductor") Long idConductor) {
+    public ResponseEntity<List<Ruta>> getRutasByConductor(@PathVariable("idConductor") Integer idConductor) {
         try {
             List<Ruta> rutas = rutaService.getRutasByConductor(idConductor);
             return new ResponseEntity<>(rutas, HttpStatus.OK);
@@ -53,7 +53,7 @@ public class RutaController {
 
     // Endpoint para agregar paradas a una ruta específica
     @PostMapping("/{rutaId}/paradas")
-    public ResponseEntity<?> addParadaToRuta(@PathVariable("rutaId") Long rutaId, @RequestBody Parada parada) {
+    public ResponseEntity<?> addParadaToRuta(@PathVariable("rutaId") Integer rutaId, @RequestBody Parada parada) {
         Optional<Ruta> rutaOpt = rutaService.getRutaById(rutaId);
         if (rutaOpt.isPresent()) {
             Ruta ruta = rutaOpt.get();
@@ -67,7 +67,7 @@ public class RutaController {
 
     // Endpoint para eliminar una ruta por ID
     @DeleteMapping("/{rutaId}")
-    public ResponseEntity<?> deleteRuta(@PathVariable("rutaId") Long rutaId) {
+    public ResponseEntity<?> deleteRuta(@PathVariable("rutaId") Integer rutaId) {
         try {
             rutaService.deleteRutaById(rutaId);
             return new ResponseEntity<>(new Mensaje("Ruta eliminada correctamente"), HttpStatus.OK);

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ParadaRepository extends JpaRepository<Parada, Long> {
+public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     // Método para encontrar todas las paradas de una ruta específica
     List<Parada> findByRutaRutaId(Long rutaId);
 }

@@ -13,7 +13,7 @@ public class Parada {
     @NotBlank
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idParadas;
+    private Integer idParadas;
 
     @ManyToOne
     @JoinColumn(name = "ruta_id", nullable = false)

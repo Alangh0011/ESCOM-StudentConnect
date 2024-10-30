@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ParadaService {
@@ -24,7 +25,11 @@ public class ParadaService {
     }
 
     // Método para eliminar paradas por ID
-    public void deleteParadaById(Long id) {
+    public void deleteParadaById(Integer id) {
         paradaRepository.deleteById(id);
+    }
+
+    public Optional<Parada> getById(Integer id) {
+        return paradaRepository.findById(id);
     }
 }

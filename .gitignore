@@ -1,0 +1,33 @@
+backend/student-connect/HELP.md
+backend/student-connect/target/
+backend/student-connect/!.mvn/wrapper/maven-wrapper.jar
+backend/student-connect/!**/src/main/**/target/
+backend/student-connect/!**/src/test/**/target/
+
+backend/student-connect/### STS ###
+backend/student-connect/.apt_generated
+backend/student-connect/.classpath
+backend/student-connect/.factorypath
+backend/student-connect/.project
+backend/student-connect/.settings
+backend/student-connect/.springBeans
+backend/student-connect/.sts4-cache
+
+### IntelliJ IDEA ###
+backend/.idea
+backend/student-connect/*.iws
+backend/student-connect/*.iml
+backend/student-connect/*.ipr
+
+### NetBeans ###
+backend/student-connect/nbproject/private/
+backend/student-connect/nbbuild/
+backend/student-connect/dist/
+backend/student-connect/nbdist/
+backend/student-connect/.nb-gradle/
+backend/student-connect/build/
+backend/student-connect!**/src/main/**/build/
+backend/student-connect!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

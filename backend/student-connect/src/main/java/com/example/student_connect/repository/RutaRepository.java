@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface RutaRepository extends JpaRepository<Ruta, Long> {
+public interface RutaRepository extends JpaRepository<Ruta, Integer> {
     // Método para encontrar todas las rutas de un conductor específico por su id
-    List<Ruta> findByConductorId(Long idUsuario);
+    List<Ruta> findByConductorId(Integer idUsuario);
 }

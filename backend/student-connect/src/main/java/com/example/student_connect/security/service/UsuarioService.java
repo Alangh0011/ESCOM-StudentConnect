@@ -1,5 +1,6 @@
 package com.example.student_connect.security.service;
 
+import com.example.student_connect.security.entity.Pasajero;
 import com.example.student_connect.security.entity.Usuario;
 import com.example.student_connect.security.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,11 @@ import java.util.Optional;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+
+    public Optional<Pasajero> getById(Integer id) {
+        return usuarioRepository.findById(id).filter(usuario -> usuario instanceof Pasajero)
+                .map(usuario -> (Pasajero) usuario);
+    }
 
     @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository) {

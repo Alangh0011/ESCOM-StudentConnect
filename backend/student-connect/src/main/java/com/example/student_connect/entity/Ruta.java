@@ -15,7 +15,7 @@ import java.util.List;
 public class Ruta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long rutaId;
+    private Integer rutaId;
 
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -35,8 +35,6 @@ public class Ruta {
     @NotBlank
     @Column(name = "costo_gasolina")
     private double costoGasolina;
-
-    private double costo;
 
     @Column(name = "tipo_ruta")
     private char tipoRuta;

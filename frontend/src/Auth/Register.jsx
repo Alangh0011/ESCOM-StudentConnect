@@ -1,179 +1,278 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
-import Hero from './Hero'; // Importación del componente Hero
+import Hero from './Hero';
 import { Link } from 'react-router-dom';
 
 function Register() {
-    // Estados para controlar el modal y su contenido
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
-    const [modalError, setModalError] = useState(false); // Nuevo estado para indicar si hay un error
+    const [modalError, setModalError] = useState(false);
 
-    // Estado para almacenar los datos del formulario
     const [formData, setFormData] = useState({
-        nombre : "",
-        nombreUsuario : "",
+        nombre: "",
+        apellidoPaterno: "",
+        apellidoMaterno: "",
         email: "",
-        password : "",
-        roles : [""]
+        password: "",
+        boleta: "",
+        avisoPrivacidad: false,
+        sexo: "",
+        fotoPerfil: null,
+        roles: ["pasajero"],
+        placas: "",
+        descripcion: "",
+        modelo: "",
+        color: ""
     });
-    // Función para manejar cambios en los inputs del formulario
+
     const handleChange = (e) => {
+        const { name, value, type, checked, files } = e.target;
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value
+            [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value
         });
     };
-    // Función para manejar cambios en el rol seleccionado
+
     const handleRoleChange = (e) => {
-        const selectedRole = e.target.value; // Valor del radio button seleccionado
         setFormData({
             ...formData,
-            roles: [selectedRole] // Configurar el valor de roles como un array con el rol seleccionado
+            roles: [e.target.value]
         });
     };
-    // Función para manejar el envío del formulario
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8080/auth/nuevo', formData);
-            console.log(response.data);
+            const formDataToSend = new FormData();
+            Object.keys(formData).forEach(key => {
+                formDataToSend.append(key, formData[key]);
+            });
+            const response = await axios.post('http://localhost:8080/auth/nuevo', formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             setModalMessage('Usuario registrado exitosamente');
             setModalError(false);
             setModalOpen(true);
         } catch (error) {
-            console.error('Error:', error);
-            if (error.response) {
-                console.log(error.response.data);
-                setModalMessage(error.response.data.message);
-            } else if (error.request) {
-                console.log(error.request);
-                setModalMessage('No se recibió respuesta del servidor');
-            } else {
-                console.log('Error', error.message);
-                setModalMessage('Ocurrió un error inesperado');
-            }
+            setModalMessage(error.response?.data?.message || 'Ocurrió un error inesperado');
             setModalError(true);
             setModalOpen(true);
         }
     };
-    
 
     return (
-    <div className="flex w-full h-screen">
-      <div className="w-full flex items-center justify-center lg:w-1/2 bg-gray-200">
-        <div className="bg-white px-10 py-20 rounded-3xl border-2 border-gray-100 shadow bg-opacity-50">
-            <h1 className="text-5xl font-semibold">WELCOME</h1>
-            <p className="font-medium text-lg text-gray-500 mt-4">Welcome back! Please enter your details</p>
-            <div className="mt-8">
-                                    {/* Formulario de registro */}
-                <div>
-                    <label className="text-lg font-medium">Email</label>
-                    <input
-                    className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                    placeholder="enter your email"
-                    value={formData.email}
-                    type='email'
-                    onChange={handleChange}
-                    name='email'
-                    />
-                </div>
-            </div>
-            <div className="mt-8">
-                <div>
-                    <label className="text-lg font-medium">Name complete</label>
-                    <input
-                    className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                    placeholder="enter your name complete"
-                    value={formData.nombre}
-                    onChange={handleChange}
-                    name='nombre'
-                    type='text'
-                    />
-                </div>
-            </div>
-            <div className="mt-8">
-                <div>
-                    <label className="text-lg font-medium">Name user</label>
-                    <input
-                    className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                    placeholder="enter your name user"
-                    value={formData.nombreUsuario}
-                    onChange={handleChange}
-                    name='nombreUsuario'
-                    type='text'
-                    />
-                </div>
-            </div>
-            <div className="mt-8">
-                <div>
-                    <label className="text-lg font-medium">Password</label>
-                    <input
-                    className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                    placeholder="enter your password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    name='password'
-                    />
-                </div>
-            </div>
-            <div className="mt-8 flex justify-between items-center">
-            <div>
-                    <label className="text-lg font-medium">Choose a role:</label>
-                    <div className="flex items-center mt-2">
-                        <input
-                            type="radio"
-                            id="user"
-                            name="rol"
-                            value="user"
-                            checked={formData.roles[0] === 'user'}
-                            onChange={handleRoleChange}
-                            className="mr-2"
-                        />
-                        <label htmlFor="user" className="mr-4">Usuario</label>
-                        <input
-                            type="radio"
-                            id="admin"
-                            name="rol"
-                            value="admin"
-                            checked={formData.roles[0] === 'admin'}
-                            onChange={handleRoleChange}
-                            className="mr-2"
-                        />
-                        <label htmlFor="admin">Admin</label>
-                    </div>
-                </div>
-            </div>
-            <div className="mt-1 flex justify-between items-center">
-                <p className="mt-1 font-medium text-base">
-                    Do you already have an account?</p>
-                        {/* Enlace para redirigir a la página de Login */}
+        <div className="flex flex-col lg:flex-row w-full h-screen bg-gradient-to-bl from-blue-200 via-blue-400 to-blue-700 overflow-auto">
+            <div className="flex w-full lg:w-1/2 items-center justify-center px-4 py-10 lg:py-0">
+                <div className="bg-white px-6 py-10 sm:px-10 sm:py-20 rounded-3xl border-2 border-gray-100 shadow bg-opacity-50 w-full max-w-md lg:max-w-lg overflow-y-auto max-h-screen">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-center">Registrar Conductor/Pasajero</h1>
+                    <p className="font-medium text-lg text-gray-500 mt-4 text-center">Completa tus datos para registrarte</p>
 
-                <Link 
-                className="font-medium text-base text-green-500"
-                to="/login">Go to Login</Link>
+                    {/* Formulario de registro */}
+                    <form onSubmit={handleSubmit} className="mt-8 space-y-4 text-sm sm:text-base">
+                        <div>
+                            <label className="text-lg font-medium">Nombre</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Tu nombre"
+                                name="nombre"
+                                value={formData.nombre}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Apellido Paterno</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Tu apellido paterno"
+                                name="apellidoPaterno"
+                                value={formData.apellidoPaterno}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Apellido Materno</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Tu apellido materno"
+                                name="apellidoMaterno"
+                                value={formData.apellidoMaterno}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Correo</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Tu correo"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Contraseña</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Contraseña"
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Boleta</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                placeholder="Número de boleta"
+                                type="number"
+                                name="boleta"
+                                value={formData.boleta}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="flex items-center mt-4">
+                            <input
+                                type="checkbox"
+                                name="avisoPrivacidad"
+                                checked={formData.avisoPrivacidad}
+                                onChange={handleChange}
+                                required
+                            />
+                            <label className="ml-2">Acepto el Aviso de Privacidad</label>
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Sexo</label>
+                            <select
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                name="sexo"
+                                value={formData.sexo}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Selecciona tu sexo</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium">Foto de Perfil</label>
+                            <input
+                                className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                type="file"
+                                name="fotoPerfil"
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
 
+                        {/* Selección de rol */}
+                        <div className="mt-4">
+                            <label className="text-lg font-medium">Rol</label>
+                            <div className="flex items-center mt-2">
+                                <input
+                                    type="radio"
+                                    id="pasajero"
+                                    name="rol"
+                                    value="pasajero"
+                                    checked={formData.roles[0] === "pasajero"}
+                                    onChange={handleRoleChange}
+                                    className="mr-2"
+                                />
+                                <label htmlFor="pasajero" className="mr-4">Pasajero</label>
+                                <input
+                                    type="radio"
+                                    id="conductor"
+                                    name="rol"
+                                    value="conductor"
+                                    checked={formData.roles[0] === "conductor"}
+                                    onChange={handleRoleChange}
+                                    className="mr-2"
+                                />
+                                <label htmlFor="conductor">Conductor</label>
+                            </div>
+                        </div>
+
+                        {/* Campos adicionales para conductor */}
+                        {formData.roles[0] === "conductor" && (
+                            <>
+                                <div>
+                                    <label className="text-lg font-medium">Placas</label>
+                                    <input
+                                        className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                        placeholder="Placas del vehículo"
+                                        name="placas"
+                                        value={formData.placas}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-lg font-medium">Descripción del Vehículo</label>
+                                    <input
+                                        className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                        placeholder="Descripción del vehículo"
+                                        name="descripcion"
+                                        value={formData.descripcion}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-lg font-medium">Modelo del Vehículo</label>
+                                    <input
+                                        className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                        placeholder="Modelo del vehículo"
+                                        name="modelo"
+                                        value={formData.modelo}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-lg font-medium">Color del Vehículo</label>
+                                    <input
+                                        className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
+                                        placeholder="Color del vehículo"
+                                        name="color"
+                                        value={formData.color}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        <div className="mt-8 flex flex-col gap-y-4">
+                            <button
+                                type="submit"
+                                className="py-2 rounded-xl bg-green-500 text-white font-bold hover:scale-105 transition-transform"
+                            >
+                                Registrar
+                            </button>
+                        </div>
+                    </form>
+
+                    <Modal
+                        isOpen={modalOpen}
+                        onClose={() => setModalOpen(false)}
+                        data={{ error: modalError, message: modalMessage }}
+                    />
+                </div>
             </div>
-                    {/* Botón para enviar el formulario */}
-            <div className="mt-8 flex flex-col gap-y-4">
-                <button 
-                onClick={handleSubmit}
-                className="active:scale-[.98] active:duration-80 transition-all py-2 rounded-xl bg-green-500 text-white text-lg font-bold hover:scale-[1.1] ease-in-out">Register</button>
+            <div className="hidden lg:flex h-full w-1/2 items-center justify-center">
+                <Hero />
             </div>
-                    {/* Componente Modal para mostrar mensajes */}
-            <Modal 
-            isOpen={modalOpen} 
-            onClose={() => setModalOpen(false)} 
-            data={{ error: modalError, message: modalMessage }} />
         </div>
-    </div>
-    <div className="hidden relative lg:flex h-full w-1/2 items-center justify-center bg-gray-200">
-        <Hero/>
-    </div>
-</div>
-    )
-}   
+    );
+}
 
-export default Register
+export default Register;

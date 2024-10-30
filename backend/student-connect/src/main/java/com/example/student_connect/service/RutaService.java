@@ -25,12 +25,12 @@ public class RutaService {
     }
 
     // Método para obtener todas las rutas de un conductor específico
-    public List<Ruta> getRutasByConductor(Long conductorId) {
+    public List<Ruta> getRutasByConductor(Integer conductorId) {
         return rutaRepository.findByConductorId(conductorId);
     }
 
     // Método para obtener una ruta por su ID
-    public Optional<Ruta> getRutaById(Long id) {
+    public Optional<Ruta> getRutaById(Integer id) {
         return rutaRepository.findById(id);
     }
 
@@ -40,7 +40,11 @@ public class RutaService {
     }
 
     // Método para eliminar una ruta por ID
-    public void deleteRutaById(Long id) {
+    public void deleteRutaById(Integer id) {
         rutaRepository.deleteById(id);
+    }
+
+    public Optional<Ruta> getById(Integer id) {
+        return rutaRepository.findById(id);
     }
 }
