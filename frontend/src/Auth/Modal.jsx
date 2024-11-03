@@ -22,7 +22,7 @@ const Modal = ({ isOpen, onClose, data }) => {
                         <p className="mb-4">{data.message}</p>
                         {/* Botón para cerrar el modal */}
                         <button onClick={closeModal} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Close
+                            Cerrar
                         </button>
                     </div>
                 </div>

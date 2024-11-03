@@ -1,46 +1,61 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
-import User from './User';
-import Admin from './Admin';
 import { jwtDecode } from "jwt-decode";
+import Perfil from './Perfil';
+import Ruta from '../Conductor/Ruta';
 
-const Home = () => {
-    // Estado para almacenar los roles del usuario
+function Home() {
     const [userRoles, setUserRoles] = useState([]);
+    const [userInfo, setUserInfo] = useState({
+        id: null,
+        nombre: '',
+        apellidoPaterno: '',
+        boleta: '',
+        placas: null,
+        descripcion: null,
+        modelo: null,
+        color: null,
+        email: ''
+    });
 
     useEffect(() => {
-        // Obtener el token del almacenamiento local
         const token = localStorage.getItem('token');
 
         if (token) {
             try {
-                // Decodificar el token JWT
                 const decodedToken = jwtDecode(token);
 
-                // Verificar si el token decodificado tiene los roles del usuario
-                if (decodedToken && decodedToken.roles) {
-                    // Obtener los roles del usuario desde la carga útil (payload) del token
-                    const roles = decodedToken.roles.map(role => role.authority);
+                const roles = decodedToken.roles.map(role => role.authority);
+                setUserRoles(roles);
 
-                    // Actualizar el estado con los roles del usuario
-                    setUserRoles(roles);
-                    console.log('Roles:', roles); // Agrega esta línea para depurar los roles del usuario
-                }
+                setUserInfo({
+                    id: decodedToken.id,
+                    nombre: decodedToken.nombre,
+                    apellidoPaterno: decodedToken.apellidoPaterno,
+                    boleta: decodedToken.boleta,
+                    placas: decodedToken.placas || "No aplica",
+                    descripcion: decodedToken.descripcion || "No aplica",
+                    modelo: decodedToken.modelo || "No aplica",
+                    color: decodedToken.color || "No aplica",
+                    email: decodedToken.sub
+                });
             } catch (error) {
-                // Manejo de errores al decodificar el token
                 console.error('Error al decodificar el token', error);
-                console.log('Token:', token); // Agrega esta línea para ver el token en caso de error
             }
+        } else {
+            console.error('No se encontró el token en el almacenamiento local. Por favor, inicie sesión de nuevo.');
         }
     }, []);
 
     return (
-        <div className="flex items-center justify-center h-screen">
-            <Navbar />
-            {/* Utiliza los roles del usuario para determinar qué vista mostrar */}
-            {userRoles.includes('ROLE_ADMIN') ? <Admin /> : <User />}
+        <div className="container mx-auto p-4">
+            <Perfil userInfo={userInfo} userRoles={userRoles} />
+            {userRoles.includes('ROLE_CONDUCTOR') && userInfo.id ? (
+                <Ruta userId={userInfo.id} />
+            ) : (
+                <p>El ID del conductor no está disponible. Por favor, inicie sesión de nuevo.</p>
+            )}
         </div>
     );
-};
+}
 
 export default Home;

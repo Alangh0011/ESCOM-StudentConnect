@@ -1,5 +1,8 @@
 package com.example.student_connect.security.entity;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.Entity;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Table;
@@ -10,12 +13,23 @@ import javax.validation.constraints.NotBlank;
 @Table(name = "conductor")
 public class Conductor extends Usuario {
 
+    @Getter
+    @Setter
     @NotBlank
     private String placas;
+
+    @Getter
+    @Setter
     @NotBlank
     private String descripcion;
+
+    @Getter
+    @Setter
     @NotBlank
     private String modelo;
+
+    @Getter
+    @Setter
     @NotBlank
     private String color;
 
@@ -29,38 +43,5 @@ public class Conductor extends Usuario {
 
     public Conductor() {
         // Constructor vacío para JPA
-    }
-
-    // Getters y setters para las propiedades adicionales
-    public String getPlacas() {
-        return placas;
-    }
-
-    public void setPlacas(String placas) {
-        this.placas = placas;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public String getModelo() {
-        return modelo;
-    }
-
-    public void setModelo(String modelo) {
-        this.modelo = modelo;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
     }
 }

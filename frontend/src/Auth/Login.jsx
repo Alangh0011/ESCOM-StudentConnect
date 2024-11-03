@@ -11,7 +11,7 @@ function Login({ setIsLoggedIn }) {
     const [modalMessage, setModalMessage] = useState('');
     const [modalError, setModalError] = useState(false);
     const [formData, setFormData] = useState({
-        nombreUsuario: "",
+        email: "", // Cambiado de nombreUsuario a email
         password: ""
     });
 
@@ -24,7 +24,7 @@ function Login({ setIsLoggedIn }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.nombreUsuario === "" || formData.password === "") {
+        if (formData.email === "" || formData.password === "") {
             setModalMessage('Por favor complete todos los campos.');
             setModalError(true);
             setModalOpen(true);
@@ -35,12 +35,17 @@ function Login({ setIsLoggedIn }) {
             const { token, authorities } = response.data;
             localStorage.setItem('token', token);
             localStorage.setItem('authorities', JSON.stringify(authorities));
-            setIsLoggedIn(true);
-            history.push('/home');
+            
+            setIsLoggedIn(true); // Actualiza el estado de isLoggedIn
+            history.push('/home'); // Redirige a la página de inicio después de iniciar sesión
         } catch (error) {
             console.error('Error:', error);
+            setModalMessage('Correo o contraseña incorrectos');
+            setModalError(true);
+            setModalOpen(true);
         }
     };
+    
 
     return (
         <div className="flex flex-col lg:flex-row w-full h-screen bg-gradient-to-bl from-blue-200 via-blue-400 to-blue-700">
@@ -53,10 +58,10 @@ function Login({ setIsLoggedIn }) {
                         <label className="text-lg font-medium">Correo</label>
                         <input
                             className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                            placeholder="enter your name user"
-                            value={formData.nombreUsuario}
+                            placeholder="Ingresa tu correo"
+                            value={formData.email} // Cambiado de nombreUsuario a email
                             onChange={handleChange}
-                            name="nombreUsuario"
+                            name="email" // Cambiado de nombreUsuario a email
                             type="text"
                         />
                     </div>
@@ -64,7 +69,7 @@ function Login({ setIsLoggedIn }) {
                         <label className="text-lg font-medium">Contraseña</label>
                         <input
                             className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                            placeholder="enter your password"
+                            placeholder="Ingresa tu contraseña"
                             type="password"
                             value={formData.password}
                             onChange={handleChange}
@@ -74,7 +79,7 @@ function Login({ setIsLoggedIn }) {
                     <div className="mt-8 flex justify-between items-center">
                         <div>
                             <input type="checkbox" id="remember" className="" />
-                            <label htmlFor="remember" className="ml-2 font-medium">Remember for 30 days</label>
+                            <label htmlFor="remember" className="ml-2 font-medium">Recordar por 30 días</label>
                         </div>
                         <button className="text-pink-800">¿Has olvidado la contraseña?</button>
                     </div>
@@ -87,7 +92,7 @@ function Login({ setIsLoggedIn }) {
                             onClick={handleSubmit}
                             className="py-2 rounded-xl bg-pink-950 text-white font-bold hover:scale-105 transition-transform"
                         >
-                            Sign in
+                            Iniciar sesión
                         </button>
                     </div>
                     <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} data={{ error: modalError, message: modalMessage }} />

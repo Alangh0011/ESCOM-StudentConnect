@@ -1,15 +1,16 @@
 package com.example.student_connect.controller;
 
+import com.example.student_connect.dto.RutaResponse;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.Ruta;
 import com.example.student_connect.service.ParadaService;
 import com.example.student_connect.service.RutaService;
-import com.example.student_connect.security.entity.Conductor;
 import com.example.student_connect.security.service.UsuarioService;
 import com.example.student_connect.security.utils.Mensaje;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,10 +32,22 @@ public class RutaController {
 
     // Endpoint para registrar una nueva ruta
     @PostMapping("/nueva")
+    @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> createRuta(@RequestBody Ruta ruta) {
+        System.out.println("Datos de la ruta recibidos: " + ruta);
         try {
-            rutaService.saveRuta(ruta);
-            return new ResponseEntity<>(new Mensaje("Ruta creada correctamente"), HttpStatus.CREATED);
+            // Guarda la ruta en la base de datos
+            Ruta rutaGuardada = rutaService.saveRuta(ruta);
+
+            // Crear el objeto de respuesta con el ID y las coordenadas de inicio
+            RutaResponse respuesta = new RutaResponse(
+                    rutaGuardada.getRutaId(),
+                    rutaGuardada.getPuntoInicioLat(),
+                    rutaGuardada.getPuntoInicioLng(),
+                    rutaGuardada.getCostoGasolina(),
+                    rutaGuardada.getNumeroParadas()
+            );
+            return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new Mensaje("Error al crear la ruta"), HttpStatus.BAD_REQUEST);
         }
@@ -53,6 +66,7 @@ public class RutaController {
 
     // Endpoint para agregar paradas a una ruta específica
     @PostMapping("/{rutaId}/paradas")
+    @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> addParadaToRuta(@PathVariable("rutaId") Integer rutaId, @RequestBody Parada parada) {
         Optional<Ruta> rutaOpt = rutaService.getRutaById(rutaId);
         if (rutaOpt.isPresent()) {
@@ -67,6 +81,7 @@ public class RutaController {
 
     // Endpoint para eliminar una ruta por ID
     @DeleteMapping("/{rutaId}")
+    @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> deleteRuta(@PathVariable("rutaId") Integer rutaId) {
         try {
             rutaService.deleteRutaById(rutaId);

@@ -20,34 +20,54 @@ import java.util.Set;
 @DiscriminatorColumn(name = "tipo_usuario", discriminatorType = DiscriminatorType.STRING)
 public abstract class Usuario implements UserDetails {
 
+    @Getter
+    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Getter
+    @Setter
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Getter
+    @Setter
     @Column(unique = true, nullable = false)
     private int boleta;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String nombre;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String apellidoPaterno;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String apellidoMaterno;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String password;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private boolean avisoPrivacidad;
 
+    @Getter
+    @Setter
     @Column(nullable = false)
     private String sexo;
 
+    @Getter
+    @Setter
     private double calificacion;
 
     @Getter

@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 import Hero from './Hero';
-import { Link } from 'react-router-dom';
+import PrivacyPolicyModal from './PrivacyPolicyModal'; // Importamos el nuevo componente
+import { useHistory, Link } from 'react-router-dom';
 
 function Register() {
+    const history = useHistory();
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [modalError, setModalError] = useState(false);
+    const [showPrivacyModal, setShowPrivacyModal] = useState(true); // Estado para mostrar el aviso de privacidad
 
     const [formData, setFormData] = useState({
         nombre: "",
@@ -41,21 +44,70 @@ function Register() {
         });
     };
 
+    const handlePrivacyAccept = () => {
+        setFormData({ ...formData, avisoPrivacidad: true });
+        setShowPrivacyModal(false); // Cierra el aviso de privacidad
+    };
+
+    const handlePrivacyDecline = () => {
+        setShowPrivacyModal(false);
+        setFormData({ ...formData, avisoPrivacidad: false });
+    };
+
+    const validateFields = () => {
+        // Validación de boleta
+        const boletaPattern = /^[0-9]{10}$/; // 10 dígitos
+        const isBoletaValid = boletaPattern.test(formData.boleta) && formData.boleta.endsWith("63");
+        if (!isBoletaValid) {
+            setModalMessage("Número de boleta no válido");
+            setModalError(true);
+            setModalOpen(true);
+            return false;
+        }
+
+        // Validación de correo
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@alumno\.ipn\.mx$/;
+        const isEmailValid = emailPattern.test(formData.email);
+        if (!isEmailValid) {
+            setModalMessage("Correo no válido");
+            setModalError(true);
+            setModalOpen(true);
+            return false;
+        }
+
+        return true;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateFields()) return;
+
         try {
             const formDataToSend = new FormData();
             Object.keys(formData).forEach(key => {
                 formDataToSend.append(key, formData[key]);
             });
-            const response = await axios.post('http://localhost:8080/auth/nuevo', formDataToSend, {
+
+            const endpoint = formData.roles[0] === "conductor"
+                ? 'http://localhost:8080/auth/nuevo/conductor'
+                : 'http://localhost:8080/auth/nuevo/pasajero';
+
+            const response = await axios.post(endpoint, formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
+
             setModalMessage('Usuario registrado exitosamente');
             setModalError(false);
             setModalOpen(true);
+
+             // Redirigir al usuario al login después de un registro exitoso
+             setTimeout(() => {
+                history.push('/login');
+            }, 2000); // Espera 2 segundos para mostrar el mensaje antes de redirigir
+            
         } catch (error) {
             setModalMessage(error.response?.data?.message || 'Ocurrió un error inesperado');
             setModalError(true);
@@ -67,7 +119,7 @@ function Register() {
         <div className="flex flex-col lg:flex-row w-full h-screen bg-gradient-to-bl from-blue-200 via-blue-400 to-blue-700 overflow-auto">
             <div className="flex w-full lg:w-1/2 items-center justify-center px-4 py-10 lg:py-0">
                 <div className="bg-white px-6 py-10 sm:px-10 sm:py-20 rounded-3xl border-2 border-gray-100 shadow bg-opacity-50 w-full max-w-md lg:max-w-lg overflow-y-auto max-h-screen">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-center">Registrar Conductor/Pasajero</h1>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-center">Registro</h1>
                     <p className="font-medium text-lg text-gray-500 mt-4 text-center">Completa tus datos para registrarte</p>
 
                     {/* Formulario de registro */}
@@ -106,7 +158,7 @@ function Register() {
                             />
                         </div>
                         <div>
-                            <label className="text-lg font-medium">Correo</label>
+                        <label className="text-lg font-medium">Correo</label>
                             <input
                                 className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
                                 placeholder="Tu correo"
@@ -165,7 +217,7 @@ function Register() {
                             </select>
                         </div>
                         <div>
-                            <label className="text-lg font-medium">Foto de Perfil</label>
+                            <label className="text-lg font-medium">Foto o captura de tu credencial (validación de usuario)</label>
                             <input
                                 className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
                                 type="file"
@@ -254,9 +306,9 @@ function Register() {
                         <div className="mt-8 flex flex-col gap-y-4">
                             <button
                                 type="submit"
-                                className="py-2 rounded-xl bg-green-500 text-white font-bold hover:scale-105 transition-transform"
+                                className="py-2 rounded-xl bg-pink-800 text-white font-bold hover:scale-105 transition-transform"
                             >
-                                Registrar
+                                REGISTRAR
                             </button>
                         </div>
                     </form>
@@ -271,6 +323,12 @@ function Register() {
             <div className="hidden lg:flex h-full w-1/2 items-center justify-center">
                 <Hero />
             </div>
+            {/* Modal de Aviso de Privacidad */}
+            <PrivacyPolicyModal
+                isOpen={showPrivacyModal}
+                onAccept={handlePrivacyAccept}
+                onDecline={handlePrivacyDecline}
+            />
         </div>
     );
 }
