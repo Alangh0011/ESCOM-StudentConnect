@@ -33,4 +33,10 @@ public class Parada {
 
     @Column(name = "costo_parada")
     private double costoParada;
+
+    @Column(name = "tiempo")
+    private String tiempo; // tiempo aproximado de la ruta
+
+    @Column(name = "distancia")
+    private String distancia; // distancia aproximado de la ruta
 }

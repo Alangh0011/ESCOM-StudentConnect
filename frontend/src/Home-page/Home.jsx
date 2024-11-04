@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { jwtDecode } from "jwt-decode";
 import Perfil from './Perfil';
 import Ruta from '../Conductor/Ruta';
+import Conductor from '../Conductor/Conductor';
 
 function Home() {
     const [userRoles, setUserRoles] = useState([]);
@@ -50,7 +51,7 @@ function Home() {
         <div className="container mx-auto p-4">
             <Perfil userInfo={userInfo} userRoles={userRoles} />
             {userRoles.includes('ROLE_CONDUCTOR') && userInfo.id ? (
-                <Ruta userId={userInfo.id} />
+                <Conductor userId={userInfo.id} />
             ) : (
                 <p>El ID del conductor no está disponible. Por favor, inicie sesión de nuevo.</p>
             )}

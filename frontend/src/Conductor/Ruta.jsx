@@ -1,9 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-import { GoogleMap, LoadScript, DirectionsRenderer, Autocomplete } from '@react-google-maps/api';
+import { useState, useRef, useEffect, useContext } from 'react';
+import { GoogleMap, DirectionsRenderer, Autocomplete } from '@react-google-maps/api';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
+import GoogleMapsContext from '../GoogleMapsContext';
+import ParadasControl from './ParadasControl';
 
 const Ruta = ({ userId }) => {
+  const { isLoaded, loadError } = useContext(GoogleMapsContext);
+  const [rutaGuardada, setRutaGuardada] = useState(null); // Estado para la ruta guardada
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [directionsResponse, setDirectionsResponse] = useState(null);
@@ -28,129 +32,121 @@ const Ruta = ({ userId }) => {
   const [error, setError] = useState('');
   const originRef = useRef();
   const destinationRef = useRef();
-
   const history = useHistory();
 
-  const validatePoints = (place) => {
-    const placeName = place.formatted_address || '';
-    return placeName.toLowerCase().includes("escom") || placeName.toLowerCase().includes("escuela superior de cómputo");
-  };
+  if (loadError) return <p>Error al cargar Google Maps</p>;
+  if (!isLoaded) return <p>Cargando mapa...</p>;
 
   const handlePlaceChanged = (ref, setLocation, setLat, setLng) => {
     const place = ref.current.getPlace();
     if (place.geometry) {
-        setError('');
-        setLocation(place.geometry.location);
-        
-        // Asignar latitud y longitud al formData
-        const latitude = place.geometry.location.lat();
-        const longitude = place.geometry.location.lng();
+      setError('');
+      setLocation(place.geometry.location);
 
-        setLat(latitude);
-        setLng(longitude);
+      // Asignar latitud y longitud al formData
+      const latitude = place.geometry.location.lat();
+      const longitude = place.geometry.location.lng();
 
-        // Guardar en formData
-        setFormData((prevData) => ({
-            ...prevData,
-            puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
-            puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
-            puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
-            puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng
-        }));
+      setLat(latitude);
+      setLng(longitude);
+
+      // Guardar en formData
+      setFormData((prevData) => ({
+        ...prevData,
+        puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
+        puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
+        puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
+        puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng
+      }));
     } else {
-        setError("Error al obtener la ubicación");
+      setError("Error al obtener la ubicación");
     }
-};
+  };
 
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
 
-const handleFormSubmit = async (event) => {
-  event.preventDefault();
-
-  if (!origin || !destination || formData.numeroParadas > 4) {
+    if (!origin || !destination || formData.numeroParadas > 4) {
       setError("Por favor, completa todos los campos requeridos.");
       return;
-  }
+    }
 
-  // Verificar que todos los campos necesarios están presentes
-  if (!formData.puntoInicioLat || !formData.puntoInicioLng || !formData.puntoFinalLat || !formData.puntoFinalLng || !travelTime || !distance) {
+    // Verificar que todos los campos necesarios están presentes
+    if (!formData.puntoInicioLat || !formData.puntoInicioLng || !formData.puntoFinalLat || !formData.puntoFinalLng || !travelTime || !distance) {
       setError("Datos incompletos. Asegúrate de seleccionar correctamente los puntos de inicio y destino.");
       console.log("Datos actuales:", formData, travelTime, distance);
       return;
-  }
+    }
 
-  try {
+    try {
       const token = localStorage.getItem('token');
       if (!token) {
-          setError("El token no está disponible. Por favor, inicie sesión de nuevo.");
-          console.error("Error: Token no encontrado en el almacenamiento local.");
-          return;
+        setError("El token no está disponible. Por favor, inicie sesión de nuevo.");
+        console.error("Error: Token no encontrado en el almacenamiento local.");
+        return;
       }
 
       // Actualizar formData con tiempo y distancia antes de enviarlo
       const dataToSend = {
-          ...formData,
-          tiempo: travelTime,
-          distancia: distance
+        ...formData,
+        tiempo: travelTime,
+        distancia: distance
       };
 
       console.log("Enviando datos a backend:", {
-          conductor: { id: userId },
-          ...dataToSend
+        conductor: { id: userId },
+        ...dataToSend
       });
 
-      await axios.post(
-          'http://localhost:8080/api/rutas/nueva',
-          {
-              conductor: { id: userId },
-              ...dataToSend
-          },
-          {
-              headers: {
-                  Authorization: `Bearer ${token}`
-              }
+      const response = await axios.post(
+        'http://localhost:8080/api/rutas/nueva',
+        {
+          conductor: { id: userId },
+          ...dataToSend
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
+        }
       );
-
-      history.push('/home');
-  } catch (error) {
+      setRutaGuardada(response.data); // Guardamos la respuesta en estado para luego pasarla a ParadasControl
+    } catch (error) {
       console.error("Error al crear la ruta:", error);
       setError("Error al crear la ruta. Por favor, revisa los datos ingresados.");
-  }
-};
+    }
+  };
 
+  const calculateRoute = () => {
+    if (!origin || !destination) return;
+    const directionsService = new window.google.maps.DirectionsService();
 
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === 'OK' && result) {
+          setDirectionsResponse(result);
+          const time = result.routes[0].legs[0].duration.text;
+          const dist = result.routes[0].legs[0].distance.text;
+          setTravelTime(time);
+          setDistance(dist);
 
-const calculateRoute = () => {
-  if (!origin || !destination) return;
-  const directionsService = new window.google.maps.DirectionsService();
-
-  directionsService.route(
-    {
-      origin: origin,
-      destination: destination,
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    },
-    (result, status) => {
-      if (status === 'OK' && result) {
-        setDirectionsResponse(result);
-        const time = result.routes[0].legs[0].duration.text;
-        const dist = result.routes[0].legs[0].distance.text;
-        setTravelTime(time);
-        setDistance(dist);
-
-        // Actualizar tiempo y distancia en formData
-        setFormData((prevData) => ({
+          // Actualizar tiempo y distancia en formData
+          setFormData((prevData) => ({
             ...prevData,
             tiempo: time,
             distancia: dist
-        }));
-      } else {
-        console.error(`Error al obtener la ruta: ${status}`);
+          }));
+        } else {
+          console.error(`Error al obtener la ruta: ${status}`);
+        }
       }
-    }
-  );
-};
-
+    );
+  };
 
   useEffect(() => {
     if (origin && destination) calculateRoute();
@@ -162,11 +158,11 @@ const calculateRoute = () => {
   };
 
   return (
-    <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={["places"]}>
-      <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 h-full p-4">
-        <div className="w-full lg:w-1/3 p-4 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4">Registrar Nueva Ruta</h2>
-          {error && <p className="text-red-500">{error}</p>}
+    <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 h-full p-4">
+      <div className="w-full lg:w-1/3 p-4 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold mb-4">Registrar Nueva Ruta</h2>
+        {error && <p className="text-red-500">{error}</p>}
+        {!rutaGuardada ? (
           <form onSubmit={handleFormSubmit} className="space-y-4">
             <div>
               <label className="block font-medium">Nombre de la Ruta</label>
@@ -250,18 +246,23 @@ const calculateRoute = () => {
             </div>
             <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Registrar Ruta</button>
           </form>
-        </div>
-        <div className="w-full lg:w-2/3 h-full lg:h-auto">
-          <GoogleMap mapContainerStyle={mapStyles} zoom={13} center={{ lat: 19.4326, lng: -99.1332 }}>
-            {directionsResponse && <DirectionsRenderer options={{ directions: directionsResponse }} />}
-          </GoogleMap>
-          <div className="mt-4">
-          {formData.tiempo && <p>Tiempo estimado: {formData.tiempo}</p>}
-          {formData.distancia && <p>Distancia: {formData.distancia}</p>}
-          </div>
+        ) : (
+          <ParadasControl rutaData={rutaGuardada} /> // Carga ParadasControl con los datos de la ruta
+        )}
+      </div>
+      <div className="w-full lg:w-2/3 h-full lg:h-auto">
+        <GoogleMap mapContainerStyle={mapStyles} zoom={13} center={{ lat: 19.4326, lng: -99.1332 }}>
+          {directionsResponse && <DirectionsRenderer options={{ directions: directionsResponse }} />}
+        </GoogleMap>
+        <div className="mt-4">
+          {formData.tiempo && formData.distancia ? (
+            <p className="text-green-500 font-semibold mb-4">Ruta calculada. Listo para registrar.</p>
+          ) : (
+            <p className="text-red-500 font-semibold mb-4">Calculando la ruta...</p>
+          )}
         </div>
       </div>
-    </LoadScript>
+    </div>
   );
 };
 

@@ -36,22 +36,24 @@ public class RutaController {
     public ResponseEntity<?> createRuta(@RequestBody Ruta ruta) {
         System.out.println("Datos de la ruta recibidos: " + ruta);
         try {
-            // Guarda la ruta en la base de datos
+            // Guarda la ruta en la base de datos y obtiene la ruta guardada
             Ruta rutaGuardada = rutaService.saveRuta(ruta);
 
-            // Crear el objeto de respuesta con el ID y las coordenadas de inicio
+            // Crear el objeto de respuesta con el ID, coordenadas finales, costo de gasolina y número de paradas
             RutaResponse respuesta = new RutaResponse(
                     rutaGuardada.getRutaId(),
-                    rutaGuardada.getPuntoInicioLat(),
-                    rutaGuardada.getPuntoInicioLng(),
+                    rutaGuardada.getPuntoFinalLat(),
+                    rutaGuardada.getPuntoFinalLng(),
                     rutaGuardada.getCostoGasolina(),
                     rutaGuardada.getNumeroParadas()
             );
+
             return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new Mensaje("Error al crear la ruta"), HttpStatus.BAD_REQUEST);
         }
     }
+
 
     // Endpoint para obtener todas las rutas de un conductor específico
     @GetMapping("/conductor/{idConductor}")
