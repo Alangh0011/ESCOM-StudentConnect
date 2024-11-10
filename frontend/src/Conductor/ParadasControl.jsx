@@ -1,13 +1,16 @@
-// ParadasControl.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import GoogleMapsContext from '../GoogleMapsContext';
 import Paradas from './Paradas';
 import { calcularCostoParada } from './Precio_Parada';
 
 const ParadasControl = ({ rutaData }) => {
+  const { isLoaded, loadError, googleMaps } = useContext(GoogleMapsContext); // Definir el contexto primero
+
   const [paradas, setParadas] = useState(
     Array.from({ length: rutaData.numeroParadas }, () => ({
       paradaNombre: '',
-      distanciaParada: '',
+      paradaLat: null,
+      paradaLng: null,
       costoParada: '',
     }))
   );
@@ -18,23 +21,55 @@ const ParadasControl = ({ rutaData }) => {
     setParadas(nuevasParadas);
   };
 
-  const calcularCostos = () => {
-    const costosCalculados = paradas.map((parada) => {
-      return {
-        ...parada,
-        costoParada: calcularCostoParada(
-          parseFloat(parada.distanciaParada),
-          parseFloat(rutaData.distancia),
-          parseFloat(rutaData.costoGasolina)
-        ),
-      };
-    });
-    setParadas(costosCalculados);
+  const calcularCostos = async () => {
+    if (!isLoaded || !googleMaps) {
+      console.error("Google Maps no está disponible.");
+      return;
+    }
+  
+    const todasCoordenadasValidas = paradas.every(
+      parada => parada.paradaLat !== null && parada.paradaLng !== null
+    );
+  
+    if (!todasCoordenadasValidas) {
+      console.error("No todas las coordenadas están disponibles para calcular costos.");
+      return;
+    }
+  
+    try {
+      const costosCalculados = await calcularCostoParada(
+        paradas,
+        rutaData.costoGasolina,
+        rutaData.distancia,
+        rutaData.puntoFinalLat,
+        rutaData.puntoFinalLng,
+        googleMaps
+      );
+  
+      setParadas(costosCalculados); // Actualiza el estado de las paradas con distancia y costo
+    } catch (error) {
+      console.error("Error al calcular costos:", error);
+    }
   };
+  
 
   useEffect(() => {
-    calcularCostos();
-  }, [paradas]);
+    if (
+      isLoaded &&
+      googleMaps &&
+      rutaData &&
+      rutaData.puntoInicioLat &&
+      rutaData.puntoInicioLng &&
+      rutaData.puntoFinalLat &&
+      rutaData.puntoFinalLng &&
+      rutaData.costoGasolina &&
+      rutaData.numeroParadas
+    ) {
+      calcularCostos();
+    }
+  }, [isLoaded, googleMaps, rutaData, paradas]);
+
+  if (loadError) return <p>Error al cargar Google Maps: {loadError.message}</p>;
 
   return (
     <div className="p-4 bg-gray-100 rounded-lg shadow-lg">
@@ -43,7 +78,13 @@ const ParadasControl = ({ rutaData }) => {
         <Paradas key={index} index={index} parada={parada} actualizarParada={actualizarParada} />
       ))}
       <button
-        onClick={() => calcularCostos()}
+        onClick={() => {
+          if (isLoaded && googleMaps) {
+            calcularCostos();
+          } else {
+            console.error("Google Maps no está disponible.");
+          }
+        }}
         className="bg-blue-500 text-white font-semibold px-4 py-2 rounded mt-4"
       >
         Calcular Costo por Parada

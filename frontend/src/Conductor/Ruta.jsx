@@ -4,6 +4,8 @@ import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import GoogleMapsContext from '../GoogleMapsContext';
 import ParadasControl from './ParadasControl';
+import TimePicker from 'react-time-picker';
+
 
 const Ruta = ({ userId }) => {
   const { isLoaded, loadError } = useContext(GoogleMapsContext);
@@ -27,50 +29,78 @@ const Ruta = ({ userId }) => {
     puntoFinalLng: null,
     costoTotalGasolina: '',
     tiempo: '',
-    distancia: ''
+    distancia: '',
+    puntoFinalNombre: '',
+    puntoInicioNombre: ''
   });
   const [error, setError] = useState('');
   const originRef = useRef();
   const destinationRef = useRef();
-  const history = useHistory();
 
   if (loadError) return <p>Error al cargar Google Maps</p>;
   if (!isLoaded) return <p>Cargando mapa...</p>;
 
   const handlePlaceChanged = (ref, setLocation, setLat, setLng) => {
     const place = ref.current.getPlace();
-    if (place.geometry) {
-      setError('');
-      setLocation(place.geometry.location);
+    if (place && place.geometry && place.geometry.location) {
+        setError('');
+        setLocation(place.geometry.location);
 
-      // Asignar latitud y longitud al formData
-      const latitude = place.geometry.location.lat();
-      const longitude = place.geometry.location.lng();
+        // Obtener latitud y longitud
+        const latitude = place.geometry.location.lat();
+        const longitude = place.geometry.location.lng();
 
-      setLat(latitude);
-      setLng(longitude);
+        // Obtener el nombre del lugar
+        const placeName = place.name || place.formatted_address || '';
 
-      // Guardar en formData
-      setFormData((prevData) => ({
-        ...prevData,
-        puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
-        puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
-        puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
-        puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng
-      }));
+        // Asignar latitud, longitud y nombre al formData
+        setFormData((prevData) => ({
+            ...prevData,
+            puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
+            puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
+            puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
+            puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng,
+            puntoInicioNombre: ref === originRef ? placeName : prevData.puntoInicioNombre,
+            puntoFinalNombre: ref === destinationRef ? placeName : prevData.puntoFinalNombre
+        }));
     } else {
-      setError("Error al obtener la ubicación");
+        console.error("No se pudieron obtener las coordenadas del lugar.");
+        setError("Error al obtener la ubicación");
     }
-  };
+};
+
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
+
+    if (
+      !originRef.current.getPlace().name.includes("ESCOM") &&
+      !destinationRef.current.getPlace().name.includes("ESCOM") &&
+      !originRef.current.getPlace().name.includes("Escuela Superior de Cómputo") &&
+      !destinationRef.current.getPlace().name.includes("Escuela Superior de Cómputo")
+      ) {
+          setError("El punto de inicio o destino debe incluir 'ESCOM' o 'Escuela Superior de Cómputo'.");
+          return;
+    }
+
+    // Concatenar horario antes de enviarlo
+    const horarioConcatenado = `${formData.horarioSalida} - ${formData.horarioLlegada}`;
+    
+    // Verificar si el horario está en el formato correcto
+    if (horarioConcatenado === "00:00 - 00:00") {
+        setError("El horario no puede estar en 00:00 - 00:00.");
+        return;
+    }
+     // Validación del número de paradas
+     if (formData.numeroParadas < 1 || formData.numeroParadas > 4) {
+      setError("El número de paradas debe estar entre 1 y 4.");
+      return;
+  }
 
     if (!origin || !destination || formData.numeroParadas > 4) {
       setError("Por favor, completa todos los campos requeridos.");
       return;
     }
-
     // Verificar que todos los campos necesarios están presentes
     if (!formData.puntoInicioLat || !formData.puntoInicioLng || !formData.puntoFinalLat || !formData.puntoFinalLng || !travelTime || !distance) {
       setError("Datos incompletos. Asegúrate de seleccionar correctamente los puntos de inicio y destino.");
@@ -89,6 +119,7 @@ const Ruta = ({ userId }) => {
       // Actualizar formData con tiempo y distancia antes de enviarlo
       const dataToSend = {
         ...formData,
+        horario: horarioConcatenado, // Aseguramos que el horario concatenado se envía
         tiempo: travelTime,
         distancia: distance
       };
@@ -109,18 +140,22 @@ const Ruta = ({ userId }) => {
             Authorization: `Bearer ${token}`
           }
         }
-      );
+      );  
       setRutaGuardada(response.data); // Guardamos la respuesta en estado para luego pasarla a ParadasControl
     } catch (error) {
       console.error("Error al crear la ruta:", error);
       setError("Error al crear la ruta. Por favor, revisa los datos ingresados.");
     }
   };
+  useEffect(() => {
+    console.log("Datos de formData antes de enviar a ParadasControl:", formData);
+  }, [formData]);
+
 
   const calculateRoute = () => {
     if (!origin || !destination) return;
     const directionsService = new window.google.maps.DirectionsService();
-
+  
     directionsService.route(
       {
         origin: origin,
@@ -134,12 +169,16 @@ const Ruta = ({ userId }) => {
           const dist = result.routes[0].legs[0].distance.text;
           setTravelTime(time);
           setDistance(dist);
-
-          // Actualizar tiempo y distancia en formData
+  
+          // Actualizar formData directamente
           setFormData((prevData) => ({
             ...prevData,
             tiempo: time,
-            distancia: dist
+            distancia: dist,
+            puntoInicioLat: origin.lat(),
+            puntoInicioLng: origin.lng(),
+            puntoFinalLat: destination.lat(),
+            puntoFinalLng: destination.lng(),
           }));
         } else {
           console.error(`Error al obtener la ruta: ${status}`);
@@ -147,6 +186,7 @@ const Ruta = ({ userId }) => {
       }
     );
   };
+  
 
   useEffect(() => {
     if (origin && destination) calculateRoute();
@@ -175,7 +215,7 @@ const Ruta = ({ userId }) => {
               />
             </div>
             <div>
-              <label className="block font-medium">Fecha de Publicación</label>
+              <label className="block font-medium">Fecha de Viaje</label>
               <input
                 type="date"
                 value={formData.fechaPublicacion}
@@ -225,7 +265,7 @@ const Ruta = ({ userId }) => {
               </select>
             </div>
             <div>
-              <label className="block font-medium">Costo Total de Gasolina</label>
+              <label className="block font-medium">Gasto de gasolina por ruta</label>
               <input
                 type="number"
                 value={formData.costoGasolina}
@@ -235,14 +275,17 @@ const Ruta = ({ userId }) => {
               />
             </div>
             <div>
-              <label className="block font-medium">Horario</label>
-              <input
-                type="text"
-                value={formData.horario}
-                onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
+            <TimePicker
+                onChange={(value) => setFormData(prevData => ({ ...prevData, horarioSalida: value }))}
+                value={formData.horarioSalida}
                 className="border rounded w-full p-2"
-                placeholder="Ej. 7:00 AM - 8:00 AM"
-              />
+            />
+            <TimePicker
+                onChange={(value) => setFormData(prevData => ({ ...prevData, horarioLlegada: value }))}
+                value={formData.horarioLlegada}
+                className="border rounded w-full p-2"
+            />
+
             </div>
             <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Registrar Ruta</button>
           </form>

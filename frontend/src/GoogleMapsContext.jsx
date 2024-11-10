@@ -10,8 +10,11 @@ export const GoogleMapsProvider = ({ children }) => {
     libraries: ["places"]
   });
 
+  // Accede a `window.google.maps` solo si `isLoaded` es verdadero
+  const googleMaps = isLoaded ? window.google.maps : null;
+
   return (
-    <GoogleMapsContext.Provider value={{ isLoaded, loadError }}>
+    <GoogleMapsContext.Provider value={{ isLoaded, loadError, googleMaps }}>
       {children}
     </GoogleMapsContext.Provider>
   );

@@ -19,6 +19,7 @@ public class RutaService {
         return rutaRepository.save(ruta);
     }
 
+
     // Método para obtener todas las rutas
     public List<Ruta> getAllRutas() {
         return rutaRepository.findAll();

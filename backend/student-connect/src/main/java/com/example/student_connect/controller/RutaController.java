@@ -35,11 +35,13 @@ public class RutaController {
     @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> createRuta(@RequestBody Ruta ruta) {
         System.out.println("Datos de la ruta recibidos: " + ruta);
+        System.out.println("Punto inicial latitud: " + ruta.getPuntoInicioLat() + ", longitud: " + ruta.getPuntoInicioLng());
+        System.out.println("Punto final latitud: " + ruta.getPuntoFinalLat() + ", longitud: " + ruta.getPuntoFinalLng());
+
         try {
-            // Guarda la ruta en la base de datos y obtiene la ruta guardada
             Ruta rutaGuardada = rutaService.saveRuta(ruta);
 
-            // Crear el objeto de respuesta con el ID, coordenadas finales, costo de gasolina y número de paradas
+            // Crear la respuesta
             RutaResponse respuesta = new RutaResponse(
                     rutaGuardada.getRutaId(),
                     rutaGuardada.getPuntoFinalLat(),
@@ -55,6 +57,7 @@ public class RutaController {
     }
 
 
+
     // Endpoint para obtener todas las rutas de un conductor específico
     @GetMapping("/conductor/{idConductor}")
     public ResponseEntity<List<Ruta>> getRutasByConductor(@PathVariable("idConductor") Integer idConductor) {
@@ -66,20 +69,27 @@ public class RutaController {
         }
     }
 
-    // Endpoint para agregar paradas a una ruta específica
     @PostMapping("/{rutaId}/paradas")
     @PreAuthorize("hasRole('CONDUCTOR')")
-    public ResponseEntity<?> addParadaToRuta(@PathVariable("rutaId") Integer rutaId, @RequestBody Parada parada) {
-        Optional<Ruta> rutaOpt = rutaService.getRutaById(rutaId);
-        if (rutaOpt.isPresent()) {
-            Ruta ruta = rutaOpt.get();
-            parada.setRuta(ruta);
-            paradaService.saveParada(parada);
-            return new ResponseEntity<>(new Mensaje("Parada agregada correctamente"), HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> registrarParadas(@PathVariable Integer rutaId, @RequestBody List<Parada> paradas) {
+        try {
+            Ruta ruta = rutaService.getRutaById(rutaId).orElse(null);
+            if (ruta == null) {
+                return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+            }
+
+            for (Parada parada : paradas) {
+                parada.setRuta(ruta); // Asocia la parada a la ruta
+                paradaService.saveParada(parada); // Guarda cada parada en la base de datos
+            }
+
+            return new ResponseEntity<>(new Mensaje("Paradas registradas con éxito"), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al registrar paradas"), HttpStatus.BAD_REQUEST);
         }
     }
+
+
 
     // Endpoint para eliminar una ruta por ID
     @DeleteMapping("/{rutaId}")

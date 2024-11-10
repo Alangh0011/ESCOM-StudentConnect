@@ -44,6 +44,12 @@ public class Ruta {
     @Column(name = "horario")
     private String horario;
 
+    @Column(name = "puntoInicioNombre")
+    private String puntoInicioNombre ;
+
+    @Column(name = "puntoFinalNombre")
+    private String puntoFinalNombre;
+
     @Column(name = "punto_inicio_lat")
     private double puntoInicioLat; // Latitud del punto de inicio
 
