@@ -3,7 +3,6 @@ import { Autocomplete } from '@react-google-maps/api';
 
 const Paradas = ({ index, parada = {}, actualizarParada }) => {
   const autocompleteRef = useRef(null);
-
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
     if (place && place.geometry) {
@@ -42,13 +41,17 @@ const Paradas = ({ index, parada = {}, actualizarParada }) => {
       <div className="mt-2">
         <label className="block font-medium">Distancia desde la Parada anterior (km)</label>
         <p className="border rounded w-full p-2 bg-gray-100">
-          {parada.distanciaParada !== undefined ? `${parada.distanciaParada.toFixed(2)} km` : 'Calculando...'}
+          {parada.distanciaParada 
+            ? `${parada.distanciaParada.toFixed(2)} km`
+            : 'Calculando...'}
         </p>
       </div>
       <div className="mt-2">
-        <label className="block font-medium">Costo de la Parada (aproximado)</label>
+        <label className="block font-medium">Costo de la Parada</label>
         <p className="border rounded w-full p-2 bg-gray-100">
-          {parada.costoParada !== undefined ? `$${parada.costoParada}` : 'Calculando...'}
+          {parada.costoParada !== undefined
+            ? `$${parseFloat(parada.costoParada).toFixed(2)}`
+            : '$0.00'}
         </p>
       </div>
     </div>
