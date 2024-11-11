@@ -1,5 +1,6 @@
 package com.example.student_connect.controller;
 
+import com.example.student_connect.dto.ActualizarDistanciaRequest;
 import com.example.student_connect.dto.RutaResponse;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.Ruta;
@@ -41,11 +42,14 @@ public class RutaController {
         try {
             Ruta rutaGuardada = rutaService.saveRuta(ruta);
 
-            // Crear la respuesta
+            // Crear la respuesta con los campos adicionales
             RutaResponse respuesta = new RutaResponse(
                     rutaGuardada.getRutaId(),
+                    rutaGuardada.getPuntoInicioLat(),
+                    rutaGuardada.getPuntoInicioLng(),
                     rutaGuardada.getPuntoFinalLat(),
                     rutaGuardada.getPuntoFinalLng(),
+                    rutaGuardada.getTipoRuta(),
                     rutaGuardada.getCostoGasolina(),
                     rutaGuardada.getNumeroParadas()
             );
@@ -55,6 +59,26 @@ public class RutaController {
             return new ResponseEntity<>(new Mensaje("Error al crear la ruta"), HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PostMapping("/{rutaId}/actualizarDistancia")
+    @PreAuthorize("hasRole('CONDUCTOR')")
+    public ResponseEntity<?> actualizarDistanciaTotal(@PathVariable Integer rutaId, @RequestBody ActualizarDistanciaRequest request) {
+        try {
+            Optional<Ruta> optionalRuta = rutaService.getRutaById(rutaId);
+            if (!optionalRuta.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+            }
+
+            Ruta ruta = optionalRuta.get();
+            ruta.setDistancia(request.getDistancia()); // Usa el valor de distancia del objeto request
+            rutaService.saveRuta(ruta); // Guarda los cambios en la base de datos
+
+            return new ResponseEntity<>(new Mensaje("Distancia total actualizada correctamente"), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al actualizar la distancia total"), HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
 
 
@@ -72,22 +96,23 @@ public class RutaController {
     @PostMapping("/{rutaId}/paradas")
     @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> registrarParadas(@PathVariable Integer rutaId, @RequestBody List<Parada> paradas) {
-        try {
-            Ruta ruta = rutaService.getRutaById(rutaId).orElse(null);
-            if (ruta == null) {
-                return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
-            }
-
-            for (Parada parada : paradas) {
-                parada.setRuta(ruta); // Asocia la parada a la ruta
-                paradaService.saveParada(parada); // Guarda cada parada en la base de datos
-            }
-
-            return new ResponseEntity<>(new Mensaje("Paradas registradas con éxito"), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new Mensaje("Error al registrar paradas"), HttpStatus.BAD_REQUEST);
+        if (paradas == null || paradas.isEmpty()) {
+            return new ResponseEntity<>(new Mensaje("No se proporcionaron paradas"), HttpStatus.BAD_REQUEST);
         }
+
+        Ruta ruta = rutaService.getRutaById(rutaId).orElse(null);
+        if (ruta == null) {
+            return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+        }
+
+        for (Parada parada : paradas) {
+            parada.setRuta(ruta); // Asocia la parada a la ruta
+            paradaService.saveParada(parada); // Guarda cada parada en la base de datos
+        }
+
+        return new ResponseEntity<>(new Mensaje("Paradas registradas con éxito"), HttpStatus.CREATED);
     }
+
 
 
 

@@ -1,24 +1,25 @@
-// Paradas.jsx
 import React, { useRef } from 'react';
 import { Autocomplete } from '@react-google-maps/api';
 
-const Paradas = ({ index, parada, actualizarParada }) => {
+const Paradas = ({ index, parada = {}, actualizarParada }) => {
   const autocompleteRef = useRef(null);
 
   const handlePlaceChanged = () => {
     const place = autocompleteRef.current.getPlace();
-    if (place.geometry) {
+    if (place && place.geometry) {
       const latitude = place.geometry.location.lat();
       const longitude = place.geometry.location.lng();
       const placeName = place.name || place.formatted_address || '';
 
+      // Actualizar la parada con la nueva información
       actualizarParada(index, {
+        ...parada,
         paradaNombre: placeName,
         paradaLat: latitude,
         paradaLng: longitude,
-        distanciaParada: parada.distanciaParada || '',
-        costoParada: parada.costoParada || '',
       });
+    } else {
+      console.warn("No se pudo obtener la geometría del lugar seleccionado.");
     }
   };
 
@@ -40,10 +41,18 @@ const Paradas = ({ index, parada, actualizarParada }) => {
       </div>
       <div className="mt-2">
         <label className="block font-medium">Distancia desde la Parada anterior (km)</label>
-        <p className="border rounded w-full p-2 bg-gray-100">{parada.distanciaParada || 'Calculando...'}</p>
+        <p className="border rounded w-full p-2 bg-gray-100">
+          {parada.distanciaParada !== undefined ? `${parada.distanciaParada.toFixed(2)} km` : 'Calculando...'}
+        </p>
+      </div>
+      <div className="mt-2">
+        <label className="block font-medium">Costo de la Parada (aproximado)</label>
+        <p className="border rounded w-full p-2 bg-gray-100">
+          {parada.costoParada !== undefined ? `$${parada.costoParada}` : 'Calculando...'}
+        </p>
       </div>
     </div>
   );
 };
 
-export default Paradas; // Agrega esta línea si aún no está
+export default Paradas;

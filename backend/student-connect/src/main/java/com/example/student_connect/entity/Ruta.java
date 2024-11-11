@@ -66,7 +66,7 @@ public class Ruta {
     private String tiempo; // tiempo aproximado de la ruta
 
     @Column(name = "distancia")
-    private String distancia; // distancia aproximado de la ruta
+    private double distancia; // distancia aproximado de la ruta
 
     @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Parada> paradas; // Hasta 4 paradas asociadas a esta ruta

@@ -11,7 +11,6 @@ import javax.validation.constraints.NotNull;
 @Table(name = "paradas")
 public class Parada {
 
-    @NotBlank
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idParadas;

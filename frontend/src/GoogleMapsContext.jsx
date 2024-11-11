@@ -4,13 +4,15 @@ import { useLoadScript } from '@react-google-maps/api';
 
 const GoogleMapsContext = createContext();
 
+// Incluye 'directions' en las bibliotecas
+const libraries = ['places', 'directions'];
+
 export const GoogleMapsProvider = ({ children }) => {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ["places"]
+    libraries,
   });
 
-  // Accede a `window.google.maps` solo si `isLoaded` es verdadero
   const googleMaps = isLoaded ? window.google.maps : null;
 
   return (

@@ -1,15 +1,12 @@
 import { useState, useRef, useEffect, useContext } from 'react';
 import { GoogleMap, DirectionsRenderer, Autocomplete } from '@react-google-maps/api';
-import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import GoogleMapsContext from '../GoogleMapsContext';
 import ParadasControl from './ParadasControl';
-import TimePicker from 'react-time-picker';
-
 
 const Ruta = ({ userId }) => {
   const { isLoaded, loadError } = useContext(GoogleMapsContext);
-  const [rutaGuardada, setRutaGuardada] = useState(null); // Estado para la ruta guardada
+  const [rutaGuardada, setRutaGuardada] = useState(null);
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [directionsResponse, setDirectionsResponse] = useState(null);
@@ -19,7 +16,7 @@ const Ruta = ({ userId }) => {
     nombreRuta: '',
     fechaPublicacion: '',
     numeroPasajeros: 0,
-    numeroParadas: '',
+    numeroParadas: '', // Cambiarlo a número más adelante
     costoGasolina: '',
     tipoRuta: '',
     horario: '',
@@ -27,7 +24,6 @@ const Ruta = ({ userId }) => {
     puntoInicioLng: null,
     puntoFinalLat: null,
     puntoFinalLng: null,
-    costoTotalGasolina: '',
     tiempo: '',
     distancia: '',
     puntoFinalNombre: '',
@@ -43,86 +39,62 @@ const Ruta = ({ userId }) => {
   const handlePlaceChanged = (ref, setLocation, setLat, setLng) => {
     const place = ref.current.getPlace();
     if (place && place.geometry && place.geometry.location) {
-        setError('');
-        setLocation(place.geometry.location);
+      setError('');
+      setLocation(place.geometry.location);
 
-        // Obtener latitud y longitud
-        const latitude = place.geometry.location.lat();
-        const longitude = place.geometry.location.lng();
+      const latitude = place.geometry.location.lat();
+      const longitude = place.geometry.location.lng();
+      const placeName = place.name || place.formatted_address || '';
 
-        // Obtener el nombre del lugar
-        const placeName = place.name || place.formatted_address || '';
-
-        // Asignar latitud, longitud y nombre al formData
-        setFormData((prevData) => ({
-            ...prevData,
-            puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
-            puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
-            puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
-            puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng,
-            puntoInicioNombre: ref === originRef ? placeName : prevData.puntoInicioNombre,
-            puntoFinalNombre: ref === destinationRef ? placeName : prevData.puntoFinalNombre
-        }));
+      setFormData((prevData) => ({
+        ...prevData,
+        puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
+        puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
+        puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
+        puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng,
+        puntoInicioNombre: ref === originRef ? placeName : prevData.puntoInicioNombre,
+        puntoFinalNombre: ref === destinationRef ? placeName : prevData.puntoFinalNombre
+      }));
     } else {
-        console.error("No se pudieron obtener las coordenadas del lugar.");
-        setError("Error al obtener la ubicación");
+      console.error("No se pudieron obtener las coordenadas del lugar.");
+      setError("Error al obtener la ubicación");
     }
-};
-
+  };
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    if (
-      !originRef.current.getPlace().name.includes("ESCOM") &&
-      !destinationRef.current.getPlace().name.includes("ESCOM") &&
-      !originRef.current.getPlace().name.includes("Escuela Superior de Cómputo") &&
-      !destinationRef.current.getPlace().name.includes("Escuela Superior de Cómputo")
-      ) {
-          setError("El punto de inicio o destino debe incluir 'ESCOM' o 'Escuela Superior de Cómputo'.");
-          return;
+    if (!origin || !destination || !formData.numeroParadas || formData.numeroParadas < 1 || formData.numeroParadas > 4) {
+      setError("Por favor, completa todos los campos requeridos y asegúrate de que el número de paradas esté entre 1 y 4.");
+      return;
     }
 
-    // Concatenar horario antes de enviarlo
+    const numeroParadasInt = parseInt(formData.numeroParadas, 10);
+    if (isNaN(numeroParadasInt)) {
+      setError("El número de paradas debe ser un valor numérico.");
+      return;
+    }
+
     const horarioConcatenado = `${formData.horarioSalida} - ${formData.horarioLlegada}`;
-    
-    // Verificar si el horario está en el formato correcto
     if (horarioConcatenado === "00:00 - 00:00") {
-        setError("El horario no puede estar en 00:00 - 00:00.");
-        return;
-    }
-     // Validación del número de paradas
-     if (formData.numeroParadas < 1 || formData.numeroParadas > 4) {
-      setError("El número de paradas debe estar entre 1 y 4.");
+      setError("El horario no puede estar en 00:00 - 00:00.");
       return;
-  }
+    }
 
-    if (!origin || !destination || formData.numeroParadas > 4) {
-      setError("Por favor, completa todos los campos requeridos.");
-      return;
-    }
-    // Verificar que todos los campos necesarios están presentes
-    if (!formData.puntoInicioLat || !formData.puntoInicioLng || !formData.puntoFinalLat || !formData.puntoFinalLng || !travelTime || !distance) {
-      setError("Datos incompletos. Asegúrate de seleccionar correctamente los puntos de inicio y destino.");
-      console.log("Datos actuales:", formData, travelTime, distance);
-      return;
-    }
+    const dataToSend = {
+      ...formData,
+      numeroParadas: numeroParadasInt,
+      horario: horarioConcatenado,
+      tiempo: travelTime,
+      distancia: distance,
+    };
 
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         setError("El token no está disponible. Por favor, inicie sesión de nuevo.");
-        console.error("Error: Token no encontrado en el almacenamiento local.");
         return;
       }
-
-      // Actualizar formData con tiempo y distancia antes de enviarlo
-      const dataToSend = {
-        ...formData,
-        horario: horarioConcatenado, // Aseguramos que el horario concatenado se envía
-        tiempo: travelTime,
-        distancia: distance
-      };
 
       console.log("Enviando datos a backend:", {
         conductor: { id: userId },
@@ -141,16 +113,14 @@ const Ruta = ({ userId }) => {
           }
         }
       );  
-      setRutaGuardada(response.data); // Guardamos la respuesta en estado para luego pasarla a ParadasControl
+
+      const rutaData = { ...response.data, numeroParadas: Number(response.data.numeroParadas) };
+      setRutaGuardada(rutaData);
     } catch (error) {
       console.error("Error al crear la ruta:", error);
       setError("Error al crear la ruta. Por favor, revisa los datos ingresados.");
     }
   };
-  useEffect(() => {
-    console.log("Datos de formData antes de enviar a ParadasControl:", formData);
-  }, [formData]);
-
 
   const calculateRoute = () => {
     if (!origin || !destination) return;
@@ -166,11 +136,11 @@ const Ruta = ({ userId }) => {
         if (status === 'OK' && result) {
           setDirectionsResponse(result);
           const time = result.routes[0].legs[0].duration.text;
-          const dist = result.routes[0].legs[0].distance.text;
+          const dist = parseFloat(result.routes[0].legs[0].distance.text.replace(" km", "").replace(",", "."));
+  
           setTravelTime(time);
           setDistance(dist);
-  
-          // Actualizar formData directamente
+
           setFormData((prevData) => ({
             ...prevData,
             tiempo: time,
@@ -186,7 +156,6 @@ const Ruta = ({ userId }) => {
       }
     );
   };
-  
 
   useEffect(() => {
     if (origin && destination) calculateRoute();
@@ -227,7 +196,7 @@ const Ruta = ({ userId }) => {
               <label className="block font-medium">Punto de Inicio</label>
               <Autocomplete
                 onLoad={(ref) => (originRef.current = ref)}
-                onPlaceChanged={() => handlePlaceChanged(originRef, setOrigin, (lat) => setFormData({ ...formData, puntoInicioLat: lat }), (lng) => setFormData({ ...formData, puntoInicioLng: lng }))}
+                onPlaceChanged={() => handlePlaceChanged(originRef, setOrigin)}
               >
                 <input type="text" placeholder="Ingresa dirección de inicio" className="border rounded w-full p-2" />
               </Autocomplete>
@@ -236,7 +205,7 @@ const Ruta = ({ userId }) => {
               <label className="block font-medium">Punto de Destino</label>
               <Autocomplete
                 onLoad={(ref) => (destinationRef.current = ref)}
-                onPlaceChanged={() => handlePlaceChanged(destinationRef, setDestination, (lat) => setFormData({ ...formData, puntoFinalLat: lat }), (lng) => setFormData({ ...formData, puntoFinalLng: lng }))}
+                onPlaceChanged={() => handlePlaceChanged(destinationRef, setDestination)}
               >
                 <input type="text" placeholder="Ingresa dirección de destino" className="border rounded w-full p-2" />
               </Autocomplete>
@@ -275,22 +244,36 @@ const Ruta = ({ userId }) => {
               />
             </div>
             <div>
-            <TimePicker
-                onChange={(value) => setFormData(prevData => ({ ...prevData, horarioSalida: value }))}
-                value={formData.horarioSalida}
-                className="border rounded w-full p-2"
-            />
-            <TimePicker
-                onChange={(value) => setFormData(prevData => ({ ...prevData, horarioLlegada: value }))}
-                value={formData.horarioLlegada}
-                className="border rounded w-full p-2"
-            />
+  <label className="block font-medium">Horario de Salida</label>
+  <input
+    type="time"
+    value={formData.horarioSalida}
+    onChange={(e) => setFormData(prevData => ({ ...prevData, horarioSalida: e.target.value }))}
+    className="border rounded w-full p-2 text-lg text-gray-800"
+  />
+</div>
+<div>
+  <label className="block font-medium">Horario de Llegada</label>
+  <input
+    type="time"
+    value={formData.horarioLlegada}
+    onChange={(e) => setFormData(prevData => ({ ...prevData, horarioLlegada: e.target.value }))}
+    className="border rounded w-full p-2 text-lg text-gray-800"
+  />
+</div>
 
-            </div>
+
             <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Registrar Ruta</button>
           </form>
         ) : (
-          <ParadasControl rutaData={rutaGuardada} /> // Carga ParadasControl con los datos de la ruta
+          rutaGuardada && rutaGuardada.numeroParadas ? (
+            <>
+              {console.log("rutaGuardada en Ruta.jsx antes de renderizar ParadasControl:", rutaGuardada)}
+              <ParadasControl rutaData={rutaGuardada} />
+            </>
+          ) : (
+            <p>Cargando datos de la ruta...</p>
+          )
         )}
       </div>
       <div className="w-full lg:w-2/3 h-full lg:h-auto">
