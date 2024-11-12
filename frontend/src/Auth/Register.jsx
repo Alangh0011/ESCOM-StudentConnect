@@ -29,13 +29,40 @@ function Register() {
         color: ""
     });
 
+
     const handleChange = (e) => {
         const { name, value, type, checked, files } = e.target;
-        setFormData({
-            ...formData,
+        
+        if (name === 'boleta') {
+            // Remover cualquier caracter no numérico y limitar a 10 dígitos
+            const boletaValue = value.replace(/\D/g, '').slice(0, 10);
+            
+            setFormData(prev => ({
+                ...prev,
+                [name]: boletaValue
+            }));
+            
+            // Validación en tiempo real
+            if (boletaValue.length === 10) {
+                const tiene63 = boletaValue.slice(4, 6) === "63";
+                const longitudCorrecta = boletaValue.length === 10;
+                console.log('Validación en tiempo real:', {
+                    boleta: boletaValue,
+                    longitud: boletaValue.length,
+                    longitudCorrecta,
+                    digitos63: boletaValue.slice(4, 6),
+                    esValida: tiene63 && longitudCorrecta
+                });
+            }
+            return;
+        }
+    
+        setFormData(prev => ({
+            ...prev,
             [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value
-        });
+        }));
     };
+
 
     const handleRoleChange = (e) => {
         setFormData({
@@ -56,27 +83,60 @@ function Register() {
 
     const validateFields = () => {
         // Validación de boleta
-        const boletaPattern = /^[0-9]{10}$/; // 10 dígitos
-        const isBoletaValid = boletaPattern.test(formData.boleta) && formData.boleta.endsWith("63");
-        if (!isBoletaValid) {
-            setModalMessage("Número de boleta no válido");
+        let boleta = formData.boleta;
+        
+        // Validar que la boleta tenga exactamente 10 dígitos
+        if (boleta.length !== 10) {
+            setModalMessage("La boleta debe tener exactamente 10 dígitos");
             setModalError(true);
             setModalOpen(true);
             return false;
         }
-
+    
+        // Validar que contenga "63" en la posición correcta (posiciones 5 y 6)
+        if (boleta.slice(4, 6) !== "63") {
+            setModalMessage("La boleta debe contener '63' en la posición correcta (formato: xxxx63xxxx)");
+            setModalError(true);
+            setModalOpen(true);
+            return false;
+        }
+    
+        // Validar que solo contenga números
+        if (!/^\d+$/.test(boleta)) {
+            setModalMessage("La boleta solo debe contener números");
+            setModalError(true);
+            setModalOpen(true);
+            return false;
+        }
+    
+        console.log('Validación de boleta:', {
+            boleta,
+            longitud: boleta.length,
+            digitos63: boleta.slice(4, 6),
+            esNumerica: /^\d+$/.test(boleta),
+            esValida: true
+        });
+    
         // Validación de correo
         const emailPattern = /^[a-zA-Z0-9._%+-]+@alumno\.ipn\.mx$/;
         const isEmailValid = emailPattern.test(formData.email);
         if (!isEmailValid) {
-            setModalMessage("Correo no válido");
+            setModalMessage("El correo debe ser una cuenta institucional (@alumno.ipn.mx)");
             setModalError(true);
             setModalOpen(true);
             return false;
         }
-
+    
+        if (!formData.avisoPrivacidad) {
+            setModalMessage("Debes aceptar el aviso de privacidad");
+            setModalError(true);
+            setModalOpen(true);
+            return false;
+        }
+    
         return true;
     };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -184,13 +244,20 @@ function Register() {
                             <label className="text-lg font-medium">Boleta</label>
                             <input
                                 className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                                placeholder="Número de boleta"
-                                type="number"
+                                placeholder="Ejemplo: 2020202020"
+                                type="text" // Cambiado a text para mejor control
+                                pattern="[0-9]*" // Solo permitir números
+                                inputMode="numeric" // Teclado numérico en móviles
                                 name="boleta"
                                 value={formData.boleta}
                                 onChange={handleChange}
+                                maxLength="10"
                                 required
                             />
+                            <small className="text-gray-500 mt-1 block">
+                                La boleta debe ser de 10 dígitos y contener '63' en la posición correcta (Ejemplo: 2020630962). 
+                                Si eres alumno de cambio de carrera, contáctanos para validar tu caso.
+                            </small>
                         </div>
                         <div className="flex items-center mt-4">
                             <input
@@ -203,7 +270,7 @@ function Register() {
                             <label className="ml-2">Acepto el Aviso de Privacidad</label>
                         </div>
                         <div>
-                            <label className="text-lg font-medium">Sexo</label>
+                            <label className="text-lg font-medium">Género</label>
                             <select
                                 className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
                                 name="sexo"
@@ -211,7 +278,7 @@ function Register() {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Selecciona tu sexo</option>
+                                <option value="">Selecciona tu Género</option>
                                 <option value="masculino">Masculino</option>
                                 <option value="femenino">Femenino</option>
                             </select>

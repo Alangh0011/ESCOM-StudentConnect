@@ -95,22 +95,43 @@ public class RutaController {
 
     @PostMapping("/{rutaId}/paradas")
     @PreAuthorize("hasRole('CONDUCTOR')")
-    public ResponseEntity<?> registrarParadas(@PathVariable Integer rutaId, @RequestBody List<Parada> paradas) {
-        if (paradas == null || paradas.isEmpty()) {
-            return new ResponseEntity<>(new Mensaje("No se proporcionaron paradas"), HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<?> registrarParadas(@PathVariable Integer rutaId,
+                                              @RequestBody List<Parada> paradas) {
+        try {
+            if (paradas == null || paradas.isEmpty()) {
+                return new ResponseEntity<>(new Mensaje("No se proporcionaron paradas"), HttpStatus.BAD_REQUEST);
+            }
 
-        Ruta ruta = rutaService.getRutaById(rutaId).orElse(null);
-        if (ruta == null) {
-            return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
-        }
+            Optional<Ruta> rutaOpt = rutaService.getRutaById(rutaId);
+            if (!rutaOpt.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+            }
 
-        for (Parada parada : paradas) {
-            parada.setRuta(ruta); // Asocia la parada a la ruta
-            paradaService.saveParada(parada); // Guarda cada parada en la base de datos
-        }
+            Ruta ruta = rutaOpt.get();
 
-        return new ResponseEntity<>(new Mensaje("Paradas registradas con éxito"), HttpStatus.CREATED);
+            for (Parada parada : paradas) {
+                if (!parada.isValidParadaNombre()) {
+                    return new ResponseEntity<>(new Mensaje("Nombre de parada inválido: " + parada.getParadaNombre()), HttpStatus.BAD_REQUEST);
+                }
+                parada.setRuta(ruta);
+
+                System.out.println("Guardando parada con los siguientes datos:");
+                System.out.println("Nombre de Parada: " + parada.getParadaNombre());
+                System.out.println("Latitud: " + parada.getParadaLat());
+                System.out.println("Longitud: " + parada.getParadaLng());
+                System.out.println("Costo de Parada: " + parada.getCostoParada());
+                System.out.println("Distancia de Parada: " + parada.getDistanciaParada());
+                System.out.println("Tiempo: " + parada.getTiempo());
+            }
+
+
+            // Guardar las paradas
+            paradas.forEach(paradaService::saveParada);
+
+            return new ResponseEntity<>(new Mensaje("Paradas registradas exitosamente"), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al registrar las paradas: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 
