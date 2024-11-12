@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -69,5 +70,14 @@ public class Ruta {
     private double distancia; // distancia aproximado de la ruta
 
     @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Parada> paradas; // Hasta 4 paradas asociadas a esta ruta
+    private List<Parada> paradas = new ArrayList<>();
+
+    public void setParadas(List<Parada> paradas) {
+        this.paradas = paradas;
+        // Mantener la bidireccionalidad
+        if (paradas != null) {
+            paradas.forEach(parada -> parada.setRuta(this));
+        }
+    }
+
 }

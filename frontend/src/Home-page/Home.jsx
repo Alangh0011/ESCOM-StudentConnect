@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from "jwt-decode";
 import Perfil from './Perfil';
-import Ruta from '../Conductor/Ruta';
 import Conductor from '../Conductor/Conductor';
+import Pasajero from '../Pasajero/Pasajero'; // Asegúrate de que la ruta sea correcta
 
-function Home() {
+function Home({ onLogout }) {
+    
+    const handleLogout = () => {
+        onLogout();
+      };
     const [userRoles, setUserRoles] = useState([]);
     const [userInfo, setUserInfo] = useState({
         id: null,
@@ -50,10 +54,14 @@ function Home() {
     return (
         <div className="container mx-auto p-4">
             <Perfil userInfo={userInfo} userRoles={userRoles} />
-            {userRoles.includes('ROLE_CONDUCTOR') && userInfo.id ? (
-                <Conductor userId={userInfo.id} />
+            {userInfo.id ? (
+                userRoles.includes('ROLE_CONDUCTOR') ? (
+                    <Conductor userId={userInfo.id} />
+                ) : (
+                    <Pasajero userId={userInfo.id} />
+                )
             ) : (
-                <p>El ID del conductor no está disponible. Por favor, inicie sesión de nuevo.</p>
+                <p>El ID del usuario no está disponible. Por favor, inicie sesión de nuevo.</p>
             )}
         </div>
     );

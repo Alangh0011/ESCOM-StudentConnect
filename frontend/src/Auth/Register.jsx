@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 import Hero from './Hero';
-import PrivacyPolicyModal from './PrivacyPolicyModal'; // Importamos el nuevo componente
-import { useHistory, Link } from 'react-router-dom';
+import PrivacyPolicyModal from './PrivacyPolicyModal';
+import { useHistory } from 'react-router-dom';
 
 function Register() {
     const history = useHistory();
@@ -22,6 +22,7 @@ function Register() {
         avisoPrivacidad: false,
         sexo: "",
         fotoPerfil: null,
+        calificacion: 5,
         roles: ["pasajero"],
         placas: "",
         descripcion: "",
@@ -140,35 +141,78 @@ function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         if (!validateFields()) return;
-
+    
         try {
             const formDataToSend = new FormData();
-            Object.keys(formData).forEach(key => {
-                formDataToSend.append(key, formData[key]);
+            
+            // Log para debug
+            console.log("Datos a enviar:", {
+                nombre: formData.nombre,
+                email: formData.email,
+                boleta: formData.boleta,
+                hasFotoPerfil: !!formData.fotoPerfil
             });
-
+    
+            // Agregar campos básicos
+            formDataToSend.append('nombre', formData.nombre);
+            formDataToSend.append('apellidoPaterno', formData.apellidoPaterno);
+            formDataToSend.append('apellidoMaterno', formData.apellidoMaterno);
+            formDataToSend.append('email', formData.email);
+            formDataToSend.append('password', formData.password);
+            formDataToSend.append('boleta', formData.boleta);
+            formDataToSend.append('calificacion', formData.calificacion);
+            formDataToSend.append('avisoPrivacidad', formData.avisoPrivacidad);
+            formDataToSend.append('sexo', formData.sexo);
+    
+            // Verificar y agregar foto de perfil
+            if (formData.fotoPerfil) {
+                formDataToSend.append('fotoPerfil', formData.fotoPerfil);
+                console.log("Foto de perfil agregada:", formData.fotoPerfil.name);
+            } else {
+                console.error("No se ha seleccionado foto de perfil");
+                setModalMessage('Debe seleccionar una foto de perfil');
+                setModalError(true);
+                setModalOpen(true);
+                return;
+            }
+    
+            // Campos de conductor
+            if (formData.roles[0] === "conductor") {
+                formDataToSend.append('placas', formData.placas);
+                formDataToSend.append('descripcion', formData.descripcion);
+                formDataToSend.append('modelo', formData.modelo);
+                formDataToSend.append('color', formData.color);
+            }
+    
             const endpoint = formData.roles[0] === "conductor"
                 ? 'http://localhost:8080/auth/nuevo/conductor'
                 : 'http://localhost:8080/auth/nuevo/pasajero';
-
+    
+            // Log del FormData antes de enviar
+            for (let pair of formDataToSend.entries()) {
+                console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+    
             const response = await axios.post(endpoint, formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-
+    
+            console.log("Respuesta exitosa:", response.data);
             setModalMessage('Usuario registrado exitosamente');
             setModalError(false);
             setModalOpen(true);
-
-             // Redirigir al usuario al login después de un registro exitoso
-             setTimeout(() => {
+    
+            setTimeout(() => {
                 history.push('/login');
-            }, 2000); // Espera 2 segundos para mostrar el mensaje antes de redirigir
+            }, 2000);
             
         } catch (error) {
+            console.error('Error completo:', error);
+            console.error('Respuesta del servidor:', error.response?.data);
             setModalMessage(error.response?.data?.message || 'Ocurrió un error inesperado');
             setModalError(true);
             setModalOpen(true);

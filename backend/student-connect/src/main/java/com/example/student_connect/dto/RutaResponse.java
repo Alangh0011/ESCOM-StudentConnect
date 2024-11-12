@@ -1,31 +1,90 @@
 package com.example.student_connect.dto;
 
-import com.example.student_connect.entity.Parada;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
 
+import java.util.Date;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class RutaResponse {
-
     private Integer rutaId;
+    private String nombreRuta;
+    private int numeroPasajeros;
+    private int numeroParadas;
+    private double costoGasolina;
+    private char tipoRuta;
+    private String horario;
+    private String puntoInicioNombre;
+    private String puntoFinalNombre;
     private double puntoInicioLat;
     private double puntoInicioLng;
     private double puntoFinalLat;
     private double puntoFinalLng;
-    private char tipoRuta;
-    private double costoGasolina;
-    private int numeroParadas;
+    private Date fechaPublicacion;
+    private List<ParadaResponse> paradas;
 
-    // Constructor completo con todos los campos
-    public RutaResponse(Integer rutaId, double puntoInicioLat, double puntoInicioLng, double puntoFinalLat, double puntoFinalLng, char tipoRuta, double costoGasolina, int numeroParadas) {
+    // Constructor para la creación de ruta
+    public RutaResponse(
+            Integer rutaId,
+            String nombreRuta,
+            int numeroPasajeros,
+            int numeroParadas,
+            double costoGasolina,
+            char tipoRuta,
+            String horario,
+            String puntoInicioNombre,
+            String puntoFinalNombre,
+            double puntoInicioLat,
+            double puntoInicioLng,
+            double puntoFinalLat,
+            double puntoFinalLng,
+            Date fechaPublicacion,
+            List<ParadaResponse> paradas) {
         this.rutaId = rutaId;
+        this.nombreRuta = nombreRuta;
+        this.numeroPasajeros = numeroPasajeros;
+        this.numeroParadas = numeroParadas;
+        this.costoGasolina = costoGasolina;
+        this.tipoRuta = tipoRuta;
+        this.horario = horario;
+        this.puntoInicioNombre = puntoInicioNombre;
+        this.puntoFinalNombre = puntoFinalNombre;
         this.puntoInicioLat = puntoInicioLat;
         this.puntoInicioLng = puntoInicioLng;
         this.puntoFinalLat = puntoFinalLat;
         this.puntoFinalLng = puntoFinalLng;
-        this.tipoRuta = tipoRuta;
-        this.costoGasolina = costoGasolina;
+        this.paradas = paradas;
+        this.fechaPublicacion = fechaPublicacion;
+    }
+
+    // Constructor para la lista de rutas
+    public RutaResponse(
+            int rutaId,
+            String nombreRuta,
+            int numeroPasajeros,
+            int numeroParadas,
+            double costoGasolina,
+            char tipoRuta,
+            String horario,
+            String puntoInicioNombre,
+            String puntoFinalNombre,
+            Date fechaPublicacion,
+            List<ParadaResponse> paradas) {
+        this.rutaId = rutaId;
+        this.nombreRuta = nombreRuta;
+        this.numeroPasajeros = numeroPasajeros;
         this.numeroParadas = numeroParadas;
+        this.costoGasolina = costoGasolina;
+        this.tipoRuta = tipoRuta;
+        this.horario = horario;
+        this.puntoInicioNombre = puntoInicioNombre;
+        this.puntoFinalNombre = puntoFinalNombre;
+        this.paradas = paradas;
+        this.fechaPublicacion = fechaPublicacion;
     }
 }

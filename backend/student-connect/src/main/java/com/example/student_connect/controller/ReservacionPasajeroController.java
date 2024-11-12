@@ -36,7 +36,7 @@ public class ReservacionPasajeroController {
         // Obtención de entidades
         Pasajero pasajero = (Pasajero) usuarioService.getById(request.getPasajeroId())
                 .orElseThrow(() -> new IllegalArgumentException("El pasajero no existe."));
-        Ruta ruta = rutaService.getById(request.getRutaId())
+        Ruta ruta = rutaService.getRutaById(request.getRutaId())
                 .orElseThrow(() -> new IllegalArgumentException("La ruta no existe."));
         Parada parada = paradaService.getById(request.getParadaId())
                 .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));

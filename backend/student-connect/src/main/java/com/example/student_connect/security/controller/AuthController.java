@@ -119,49 +119,74 @@ public class AuthController {
     public ResponseEntity<?> nuevoConductor(@ModelAttribute NuevoConductor nuevoConductor,
                                             @RequestParam("fotoPerfil") MultipartFile fotoPerfil,
                                             BindingResult bindingResult) {
+        // Log de los datos recibidos
+        System.out.println("Datos recibidos del conductor:");
+        System.out.println("Email: " + nuevoConductor.getEmail());
+        System.out.println("Boleta: " + nuevoConductor.getBoleta());
+        System.out.println("Nombre: " + nuevoConductor.getNombre());
+        System.out.println("Foto perfil recibida: " + (fotoPerfil != null ? "Sí" : "No"));
+
+        // Validación de campos obligatorios
+        if (nuevoConductor.getEmail() == null || nuevoConductor.getEmail().isEmpty()) {
+            return new ResponseEntity<>(new Mensaje("El email es obligatorio"), HttpStatus.BAD_REQUEST);
+        }
+        if (fotoPerfil == null || fotoPerfil.isEmpty()) {
+            return new ResponseEntity<>(new Mensaje("La foto de perfil es obligatoria"), HttpStatus.BAD_REQUEST);
+        }
 
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new Mensaje("campos mal puestos o email inválido"), HttpStatus.BAD_REQUEST);
+            System.out.println("Errores de validación encontrados:");
+            bindingResult.getAllErrors().forEach(error -> System.out.println(error.getDefaultMessage()));
+            return new ResponseEntity<>(new Mensaje("Campos mal puestos o email inválido: " +
+                    bindingResult.getAllErrors().get(0).getDefaultMessage()), HttpStatus.BAD_REQUEST);
         }
-        if (usuarioService.existsByEmail(nuevoConductor.getEmail())) {
-            return new ResponseEntity<>(new Mensaje("Ese email ya existe"), HttpStatus.BAD_REQUEST);
-        }
-        if (usuarioService.existsByBoleta(nuevoConductor.getBoleta())) {
-            return new ResponseEntity<>(new Mensaje("Esa boleta ya existe"), HttpStatus.BAD_REQUEST);
-        }
-        // Subimos la imagen a Blob Storage y obtenemos la URL
-        String fotoPerfilUrl = null;
-        if (fotoPerfil != null && !fotoPerfil.isEmpty()) {
-            try {
-                fotoPerfilUrl = blobStorageService.uploadFile(fotoPerfil);  // Guardamos la URL que nos da el servicio
-            } catch (IOException e) {
-                return new ResponseEntity<>(new Mensaje("Error al subir la imagen"), HttpStatus.INTERNAL_SERVER_ERROR);
+
+        try {
+            if (usuarioService.existsByEmail(nuevoConductor.getEmail())) {
+                return new ResponseEntity<>(new Mensaje("Ese email ya existe"), HttpStatus.BAD_REQUEST);
             }
-        }
+            if (usuarioService.existsByBoleta(nuevoConductor.getBoleta())) {
+                return new ResponseEntity<>(new Mensaje("Esa boleta ya existe"), HttpStatus.BAD_REQUEST);
+            }
+            String fotoPerfilUrl = null;
+            try {
+                fotoPerfilUrl = blobStorageService.uploadFile(fotoPerfil);
+            } catch (IOException e) {
+                System.out.println("Error al subir la imagen: " + e.getMessage());
+                e.printStackTrace();
+                return new ResponseEntity<>(new Mensaje("Error al subir la imagen: " + e.getMessage()),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
-        Conductor conductor = new Conductor(
-                nuevoConductor.getNombre(),
-                nuevoConductor.getApellidoPaterno(),
-                nuevoConductor.getApellidoMaterno(),
-                nuevoConductor.getEmail(),
-                passwordEncoder.encode(nuevoConductor.getPassword()),  // Encriptar la contraseña aquí
-                nuevoConductor.getBoleta(),
-                nuevoConductor.isAvisoPrivacidad(),
-                nuevoConductor.getPlacas(),
-                nuevoConductor.getDescripcion(),
-                nuevoConductor.getModelo(),
-                nuevoConductor.getColor(),
-                nuevoConductor.getSexo()
-        );
+            Conductor conductor = new Conductor(
+                    nuevoConductor.getNombre(),
+                    nuevoConductor.getApellidoPaterno(),
+                    nuevoConductor.getApellidoMaterno(),
+                    nuevoConductor.getEmail(),
+                    passwordEncoder.encode(nuevoConductor.getPassword()),
+                    nuevoConductor.getBoleta(),
+                    nuevoConductor.isAvisoPrivacidad(),
+                    nuevoConductor.getPlacas(),
+                    nuevoConductor.getDescripcion(),
+                    nuevoConductor.getModelo(),
+                    nuevoConductor.getColor(),
+                    nuevoConductor.getSexo()
+            );
 
-        if (fotoPerfilUrl != null) {
-            conductor.setFotoPerfilUrl(fotoPerfilUrl);  // Establecemos la URL de la imagen si se proporciona
+            if (fotoPerfilUrl != null) {
+                conductor.setFotoPerfilUrl(fotoPerfilUrl);
+            }
+            Set<Rol> roles = new HashSet<>();
+            roles.add(rolService.getByRolNombre(RolNombre.ROLE_CONDUCTOR).get());
+            conductor.setRoles(roles);
+            usuarioService.save(conductor);
+            return new ResponseEntity<>(new Mensaje("conductor guardado"), HttpStatus.CREATED);
+        } catch (Exception e) {
+            System.out.println("Error inesperado: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(new Mensaje("Error inesperado: " + e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        Set<Rol> roles = new HashSet<>();
-        roles.add(rolService.getByRolNombre(RolNombre.ROLE_CONDUCTOR).get());
-        conductor.setRoles(roles);
-        usuarioService.save(conductor);
-        return new ResponseEntity<>(new Mensaje("conductor guardado"), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")

@@ -17,9 +17,9 @@ public class Parada {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idParadas;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ruta_id", nullable = false)
-    private Ruta ruta; // Asociación con la ruta
+    private Ruta ruta;
 
     @NotBlank
     @Column(name = "parada_nombre")
@@ -54,4 +54,5 @@ public class Parada {
                 .anyMatch(t -> paradaNombre.toLowerCase()
                         .contains(t.toLowerCase()));
     }
+
 }

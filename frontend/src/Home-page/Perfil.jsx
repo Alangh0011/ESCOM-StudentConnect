@@ -20,6 +20,7 @@ function Perfil({ userInfo, userRoles }) {
             <div className="mt-6 lg:mt-0 lg:text-left">
                 <p><span className="font-semibold">Boleta:</span> {userInfo.boleta}</p>
                 <p><span className="font-semibold">Rol:</span> {userRoles.join(', ')}</p>
+                <p><span className="font-semibold">Calificacion:</span> {userInfo.calificacion}</p>
             </div>
 
             {/* Información del vehículo (si el usuario es conductor) */}

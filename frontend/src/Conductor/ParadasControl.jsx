@@ -5,12 +5,23 @@ import Paradas from './Paradas';
 import { calcularCostoParada, calcularDistanciaEntrePuntos } from './Precio_Parada';
 import { actualizarDistanciaTotal } from './rutaAPI';
 import { validarNombreParada } from '../utils/validaciones';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
+import axios from 'axios';
 
 
 const ParadasControl = ({ rutaData }) => {
+  useEffect(() => {
+    // Validar que tengamos todos los datos necesarios
+    console.log("Datos de ruta recibidos en ParadasControl:", rutaData);
+    if (!rutaData.puntoInicioLat || !rutaData.puntoInicioLng || 
+        !rutaData.puntoFinalLat || !rutaData.puntoFinalLng) {
+        console.error("Faltan coordenadas necesarias:", rutaData);
+    }
+}, [rutaData]);
+
+
   const { isLoaded, loadError, googleMaps } = useContext(GoogleMapsContext);
-  const navigate = useNavigate();
+  const history = useHistory();
   const [paradas, setParadas] = useState(
     Array.from({ length: rutaData.numeroParadas }, () => ({
       paradaNombre: '',
@@ -179,6 +190,17 @@ const handleCalcularDistanciaYCostos = async () => {
     console.error("Google Maps API no está disponible");
     return;
   }
+  // Validar que tengamos todas las coordenadas necesarias
+  const coordenadasCompletas = rutaData.puntoInicioLat && 
+  rutaData.puntoInicioLng && 
+  rutaData.puntoFinalLat && 
+  rutaData.puntoFinalLng;
+
+    if (!coordenadasCompletas) {
+    console.error("Faltan coordenadas para calcular la ruta", rutaData);
+    alert("No se pueden realizar los cálculos: faltan coordenadas de la ruta");
+    return;
+    }
 
   try {
     // Verificar que las paradas tengan coordenadas válidas
@@ -272,8 +294,8 @@ const handleCalcularDistanciaYCostos = async () => {
 
         const data = await response.json();
         console.log('Paradas guardadas exitosamente:', data);
-        // Redirigir a "Ver Rutas" después de guardar exitosamente
-        navigate('/verRutas');
+        alert("¡Todas las paradas han sido registradas exitosamente!");
+                    history.push('/home');
     } catch (error) {
         console.error('Error al guardar las paradas:', error);
     }
@@ -290,31 +312,100 @@ const handleCalcularDistanciaYCostos = async () => {
           actualizarParada={actualizarParada}
         />
       ))}
-      <button
-        onClick={handleCalcularDistanciaYCostos}
-        className="bg-blue-500 text-white font-semibold px-4 py-2 rounded mt-4"
-      >
-        Calcular Distancia y Costos
-      </button>
-      <div className="mt-4">
-        <h3 className="font-bold">Resumen de Costos y Distancia:</h3>
-        <p>Distancia Total: {distanciaTotal.toFixed(2)} km</p>
+      {/* Contenedor para los botones */}
+<div className="flex flex-col space-y-4 mt-6">
+  {/* Botón de Calcular */}
+  <button
+    onClick={handleCalcularDistanciaYCostos}
+    className={`
+      flex items-center justify-center
+      bg-blue-500 hover:bg-blue-600 
+      text-white font-semibold 
+      px-6 py-3 rounded-lg
+      transition-all duration-200
+      transform hover:scale-105
+      shadow-md hover:shadow-lg
+      ${!paradas.every(p => p.paradaLat && p.paradaLng) ? 'opacity-50 cursor-not-allowed' : ''}
+    `}
+    disabled={!paradas.every(p => p.paradaLat && p.paradaLng)}
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-5 w-5 mr-2" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" 
+      />
+    </svg>
+    Calcular Distancia y Costos
+  </button>
+
+  {/* Botón de Confirmar y Enviar */}
+  <button
+    onClick={guardarParadas}
+    disabled={!distanciaTotal || costosCalculados.length === 0}
+    className={`
+      flex items-center justify-center
+      px-6 py-3 rounded-lg
+      font-semibold
+      transform transition-all duration-200
+      shadow-md
+      ${distanciaTotal && costosCalculados.length > 0
+        ? 'bg-green-500 hover:bg-green-600 text-white hover:scale-105 hover:shadow-lg'
+        : 'bg-gray-300 cursor-not-allowed text-gray-500'
+      }
+    `}
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      className="h-5 w-5 mr-2" 
+      fill="none" 
+      viewBox="0 0 24 24" 
+      stroke="currentColor"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M5 13l4 4L19 7" 
+      />
+    </svg>
+    {distanciaTotal && costosCalculados.length > 0 ? 'Confirmar y Enviar' : 'Complete los cálculos primero'}
+  </button>
+
+  {/* Resumen de costos con estilo mejorado */}
+  {distanciaTotal > 0 && (
+    <div className="mt-6 p-4 bg-white rounded-lg shadow-md">
+      <h3 className="text-lg font-bold text-gray-800 mb-3">
+        Resumen de Costos y Distancia
+      </h3>
+      <div className="space-y-2">
+        <p className="flex justify-between items-center text-gray-600">
+          <span>Distancia Total:</span>
+          <span className="font-medium">{distanciaTotal.toFixed(2)} km</span>
+        </p>
         {paradas.map((parada, index) => (
-          <p key={index}>
-            Costo de Parada {index + 1}: ${parseFloat(parada.costoParada || 0).toFixed(2)}
+          <p key={index} className="flex justify-between items-center text-gray-600">
+            <span>Parada {index + 1}:</span>
+            <span className="font-medium">${parseFloat(parada.costoParada || 0).toFixed(2)}</span>
           </p>
         ))}
-        <p className="font-bold mt-2 text-lg">
-          Costo Total: ${sumaTotal.toFixed(2)}
-        </p>
+        <div className="border-t border-gray-200 mt-2 pt-2">
+          <p className="flex justify-between items-center text-lg font-bold text-gray-800">
+            <span>Costo Total:</span>
+            <span>${sumaTotal.toFixed(2)}</span>
+          </p>
+        </div>
       </div>
-      <button
-        className="bg-green-500 text-white font-semibold px-4 py-2 rounded mt-4"
-        disabled={!distanciaTotal || costosCalculados.length === 0}
-        onClick={guardarParadas}
-      >
-        Confirmar y Enviar
-      </button>
+    </div>
+  )}
+</div>
     </div>
   );
 };
