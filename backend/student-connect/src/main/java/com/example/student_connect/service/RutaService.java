@@ -24,6 +24,30 @@ public class RutaService {
     @Autowired
     private ParadaRepository paradaRepository;
 
+    public RutaService(RutaRepository rutaRepository) {
+        this.rutaRepository = rutaRepository;
+    }
+
+    public List<Ruta> getRutasByConductorInNext7Days(Integer idConductor) {
+        Date startDate = new Date(); // Fecha actual (hoy)
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startDate);
+        calendar.add(Calendar.DAY_OF_YEAR, 7); // Sumar 7 días a la fecha actual
+        Date endDate = calendar.getTime(); // Fecha 7 días después
+
+        return rutaRepository.findByConductorIdInFutureDateRange(idConductor, startDate, endDate);
+    }
+
+    public List<Ruta> getAllRutasInNext7Days() {
+        Date startDate = new Date(); // Fecha actual (hoy)
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startDate);
+        calendar.add(Calendar.DAY_OF_YEAR, 7); // Sumar 7 días a la fecha actual
+        Date endDate = calendar.getTime(); // Fecha 7 días después
+
+        return rutaRepository.findAllInFutureDateRange(startDate, endDate);
+    }
+
     @Transactional(readOnly = true)
     public List<Ruta> getAllRutas() {
         try {
@@ -85,7 +109,6 @@ public class RutaService {
         }
     }
 
-    // Los otros métodos que ya tenías...
     @Transactional(readOnly = true)
     public Page<Ruta> getRutasByConductorAndDate(Integer idConductor, Pageable pageable) {
         try {

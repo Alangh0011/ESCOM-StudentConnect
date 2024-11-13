@@ -8,14 +8,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
 public interface RutaRepository extends JpaRepository<Ruta, Integer> {
-    @Query("SELECT DISTINCT r FROM Ruta r " +
-            "LEFT JOIN FETCH r.paradas " +
-            "WHERE r.conductor.id = :idConductor")
-    List<Ruta> findByConductorId(@Param("idConductor") Integer idConductor);
 
     @Query(value = "SELECT r FROM Ruta r WHERE r.conductor.id = :idConductor",
             countQuery = "SELECT COUNT(r) FROM Ruta r WHERE r.conductor.id = :idConductor")
@@ -24,11 +21,26 @@ public interface RutaRepository extends JpaRepository<Ruta, Integer> {
             Pageable pageable
     );
 
-    @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas WHERE r.conductor.id = :idConductor")
-    List<Ruta> findRutasWithParadasByConductorAndDate(@Param("idConductor") Integer idConductor);
+    @Query("SELECT DISTINCT r FROM Ruta r " +
+            "LEFT JOIN FETCH r.paradas " +
+            "WHERE r.conductor.id = :idConductor")
+    List<Ruta> findByConductorId(@Param("idConductor") Integer idConductor);
 
-    @Query("SELECT COUNT(r) FROM Ruta r WHERE r.conductor.id = :idConductor")
-    long countRutasByConductorAndDate(@Param("idConductor") Integer idConductor);
+    // Otros métodos que ya tenías
+    @Query("SELECT DISTINCT r FROM Ruta r " +
+            "LEFT JOIN FETCH r.paradas " +
+            "WHERE r.conductor.id = :idConductor " +
+            "AND r.fechaPublicacion BETWEEN :startDate AND :endDate")
+    List<Ruta> findByConductorIdInFutureDateRange(
+            @Param("idConductor") Integer idConductor,
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate
+    );
 
-
+    @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas " +
+            "WHERE r.fechaPublicacion BETWEEN :startDate AND :endDate")
+    List<Ruta> findAllInFutureDateRange(
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate
+    );
 }

@@ -87,7 +87,7 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
                 </div>
             )}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Mis Rutas</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Mis Rutas en 7 días</h2>
                 <div className="flex items-center space-x-4 mt-4 md:mt-0">
                     {/* Search Bar */}
                     <div className="relative">

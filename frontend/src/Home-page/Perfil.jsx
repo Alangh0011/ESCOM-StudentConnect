@@ -1,14 +1,25 @@
 import React from 'react';
-import { FaStar, FaCarSide } from 'react-icons/fa';
+import { FaCarSide, FaSignOutAlt } from 'react-icons/fa';
 
-function Perfil({ userInfo, userRoles }) {
-    // Limitar calificación a dos decimales, asegurándonos de que sea un número válido
+function Perfil({ userInfo, userRoles, onLogout }) {
+    const handleLogout = () => {
+        // Limpiar localStorage
+        localStorage.clear();
+        
+        // Llamar a la función de logout del padre si existe
+        if (onLogout) {
+            onLogout();
+        }
+        
+        // Redirección simple
+        window.location.href = '/login';
+    };
+
     const calificacion = isNaN(parseFloat(userInfo.calificacion)) ? 0 : parseFloat(userInfo.calificacion).toFixed(2);
 
-    // Renderizar la calificación en figuras
     const renderCalificacion = (calificacion) => {
         const maxRating = 5;
-        const filledIcons = Math.min(Math.floor(calificacion), maxRating); // Limitar a un máximo de 5 íconos completos
+        const filledIcons = Math.min(Math.floor(calificacion), maxRating);
         const halfIcon = calificacion % 1 >= 0.5 ? 1 : 0;
         const emptyIcons = maxRating - filledIcons - halfIcon;
 
@@ -27,37 +38,50 @@ function Perfil({ userInfo, userRoles }) {
     };
 
     return (
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-700 p-6 rounded-xl shadow-lg text-white flex flex-col items-center lg:flex-row lg:justify-between lg:px-8">
-            {/* Foto de perfil */}
-            <div className="flex items-center">
-                <img 
-                    src="https://img.freepik.com/vector-gratis/ilustracion-joven-sonriente_1308-174669.jpg?t=st=1730592292~exp=1730595892~hmac=b81adb38c7c4c3d6c7bf4c65991720f57cb3a7c1885ecfa6371e7915f73d3bf3&w=740" 
-                    alt="Foto de perfil"
-                    className="w-20 h-20 rounded-full border-4 border-white"
-                />
-                <div className="ml-4">
-                    <h2 className="text-2xl font-bold">{userInfo.nombre} {userInfo.apellidoPaterno}</h2>
-                    <p className="text-sm text-white/80">{userInfo.email}</p>
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-700 p-6 rounded-xl shadow-lg text-white">
+            {/* Botón de cerrar sesión */}
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                    <FaSignOutAlt />
+                    Cerrar Sesión
+                </button>
+            </div>
+
+            <div className="flex flex-col items-center lg:flex-row lg:justify-between lg:px-8">
+                {/* Foto de perfil */}
+                <div className="flex items-center">
+                    <img
+                        src="https://img.freepik.com/vector-gratis/ilustracion-joven-sonriente_1308-174669.jpg?t=st=1730592292~exp=1730595892~hmac=b81adb38c7c4c3d6c7bf4c65991720f57cb3a7c1885ecfa6371e7915f73d3bf3&w=740"
+                        alt="Foto de perfil"
+                        className="w-20 h-20 rounded-full border-4 border-white"
+                    />
+                    <div className="ml-4">
+                        <h2 className="text-2xl font-bold">{userInfo.nombre} {userInfo.apellidoPaterno}</h2>
+                        <p className="text-sm text-white/80">{userInfo.email}</p>
+                    </div>
                 </div>
-            </div>
 
-            {/* Información del usuario */}
-            <div className="mt-6 lg:mt-0 lg:text-left">
-                <p><span className="font-semibold">Boleta:</span> {userInfo.boleta}</p>
-                <p><span className="font-semibold">Rol:</span> {userRoles.join(', ')}</p>
-                <p><span className="font-semibold">Calificación:</span> {renderCalificacion(calificacion)}</p>
-            </div>
-
-            {/* Información del vehículo (si el usuario es conductor) */}
-            {userRoles.includes('ROLE_CONDUCTOR') && (
+                {/* Información del usuario */}
                 <div className="mt-6 lg:mt-0 lg:text-left">
-                    <h3 className="font-semibold">Detalles del Vehículo</h3>
-                    <p><span className="font-semibold">Placas:</span> {userInfo.placas}</p>
-                    <p><span className="font-semibold">Descripción:</span> {userInfo.descripcion}</p>
-                    <p><span className="font-semibold">Modelo:</span> {userInfo.modelo}</p>
-                    <p><span className="font-semibold">Color:</span> {userInfo.color}</p>
+                    <p><span className="font-semibold">Boleta:</span> {userInfo.boleta}</p>
+                    <p><span className="font-semibold">Rol:</span> {userRoles.join(', ')}</p>
+                    <p><span className="font-semibold">Calificación:</span> {renderCalificacion(calificacion)}</p>
                 </div>
-            )}
+
+                {/* Información del vehículo (si el usuario es conductor) */}
+                {userRoles.includes('ROLE_CONDUCTOR') && (
+                    <div className="mt-6 lg:mt-0 lg:text-left">
+                        <h3 className="font-semibold">Detalles del Vehículo</h3>
+                        <p><span className="font-semibold">Placas:</span> {userInfo.placas}</p>
+                        <p><span className="font-semibold">Descripción:</span> {userInfo.descripcion}</p>
+                        <p><span className="font-semibold">Modelo:</span> {userInfo.modelo}</p>
+                        <p><span className="font-semibold">Color:</span> {userInfo.color}</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

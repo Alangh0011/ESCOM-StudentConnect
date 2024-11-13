@@ -40,6 +40,82 @@ public class RutaController {
     @Autowired
     private UsuarioService usuarioService; // Asegúrate de inyectar UsuarioService aquí
 
+    public RutaController(RutaService rutaService) {
+        this.rutaService = rutaService;
+    }
+
+    // Obtener rutas de un conductor en los próximos 7 días
+    @GetMapping("/conductor/{idConductor}/proximos-7-dias")
+    @PreAuthorize("hasRole('CONDUCTOR')")
+    public ResponseEntity<?> getRutasByConductorInNext7Days(@PathVariable("idConductor") Integer idConductor) {
+        try {
+            List<Ruta> rutas = rutaService.getRutasByConductorInNext7Days(idConductor);
+
+            List<RutaResponse> rutaResponses = rutas.stream()
+                    .map(ruta -> new RutaResponse(
+                            ruta.getRutaId(),
+                            ruta.getNombreRuta(),
+                            ruta.getNumeroPasajeros(),
+                            ruta.getNumeroParadas(),
+                            ruta.getCostoGasolina(),
+                            ruta.getHorario(),
+                            ruta.getPuntoInicioNombre(),
+                            ruta.getPuntoFinalNombre(),
+                            ruta.getFechaPublicacion(),
+                            ruta.getDistancia(),
+                            ruta.getTiempo(),
+                            ruta.getParadas().stream()
+                                    .map(parada -> new ParadaResponse(
+                                            parada.getParadaNombre(),
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada()
+                                    ))
+                                    .collect(Collectors.toList())
+                    ))
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(rutaResponses, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas"), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/proximos-7-dias")
+    public ResponseEntity<?> getAllRutasInNext7Days() {
+        try {
+            List<Ruta> rutas = rutaService.getAllRutasInNext7Days();
+
+            // Convertir la lista de entidades Ruta a RutaResponse para enviar solo los datos esenciales
+            List<RutaResponse> rutaResponses = rutas.stream()
+                    .map(ruta -> new RutaResponse(
+                            ruta.getRutaId(),
+                            ruta.getNombreRuta(),
+                            ruta.getNumeroPasajeros(),
+                            ruta.getNumeroParadas(),
+                            ruta.getCostoGasolina(),
+                            ruta.getHorario(),
+                            ruta.getPuntoInicioNombre(),
+                            ruta.getPuntoFinalNombre(),
+                            ruta.getFechaPublicacion(),
+                            ruta.getDistancia(),
+                            ruta.getTiempo(),
+                            ruta.getParadas().stream()
+                                    .map(parada -> new ParadaResponse(
+                                            parada.getParadaNombre(),
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada()
+                                    ))
+                                    .collect(Collectors.toList())
+                    ))
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(rutaResponses, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     // Endpoint para registrar una nueva ruta
     @PostMapping("/nueva")
     @PreAuthorize("hasRole('CONDUCTOR')")

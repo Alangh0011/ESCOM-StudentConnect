@@ -12,7 +12,16 @@ import com.example.student_connect.security.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import com.example.student_connect.dto.ParadaResponse;
+import com.example.student_connect.dto.RutaConductorResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import com.example.student_connect.security.utils.Mensaje;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservaciones")
@@ -29,6 +38,49 @@ public class ReservacionPasajeroController {
 
     @Autowired
     private ParadaService paradaService;
+
+
+    @GetMapping("/proximos-7-dias")
+    public ResponseEntity<?> getAllRutasWithConductorInNext7Days() {
+        try {
+            List<Ruta> rutas = rutaService.getAllRutasInNext7Days();
+
+            // Convierte las entidades Ruta a DTOs RutaConductorResponse
+            List<RutaConductorResponse> rutaConductorResponses = rutas.stream()
+                    .map(ruta -> new RutaConductorResponse(
+                            ruta.getRutaId(),
+                            ruta.getNombreRuta(),
+                            ruta.getNumeroPasajeros(),
+                            ruta.getNumeroParadas(),
+                            ruta.getCostoGasolina(),
+                            ruta.getHorario(),
+                            ruta.getPuntoInicioNombre(),
+                            ruta.getPuntoFinalNombre(),
+                            ruta.getFechaPublicacion(),
+                            ruta.getDistancia(),
+                            ruta.getTiempo(),
+                            ruta.getParadas().stream()
+                                    .map(parada -> new ParadaResponse(
+                                            parada.getParadaNombre(),
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada()
+                                    ))
+                                    .collect(Collectors.toList()),
+                            ruta.getConductor().getNombre(),
+                            ruta.getConductor().getApellidoPaterno(),
+                            ruta.getConductor().getEmail(),
+                            ruta.getConductor().getPlacas(),
+                            ruta.getConductor().getDescripcion(),
+                            ruta.getConductor().getModelo(),
+                            ruta.getConductor().getColor()
+                    ))
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(rutaConductorResponses, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @PostMapping("/crear")
     public ResponseEntity<?> crearReservacion(@RequestBody ReservacionRequest request) {
