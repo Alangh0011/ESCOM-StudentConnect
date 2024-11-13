@@ -252,7 +252,6 @@ const handleCalcularDistanciaYCostos = async () => {
 
   const guardarParadas = async () => {
     try {
-        // Validar que todas las paradas sean válidas
         const todasParadasValidas = paradas.every(parada => 
             validarNombreParada(parada.paradaNombre)
         );
@@ -262,23 +261,21 @@ const handleCalcularDistanciaYCostos = async () => {
             return;
         }
 
-        // Preparar los datos para enviar al backend
         const paradasParaEnviar = paradas.map(parada => ({
             paradaNombre: parada.paradaNombre,
             paradaLat: parada.paradaLat,
             paradaLng: parada.paradaLng,
             costoParada: parada.costoParada,
-            distanciaParada: parseFloat(parada.distanciaParada) || 0, // Convertir a float, usar 0 si es null
+            distanciaParada: parseFloat(parada.distanciaParada) || 0,
             tiempo: "30 min"
         }));
-
-        console.log("Datos de paradas a enviar:", paradasParaEnviar);
 
         const token = localStorage.getItem('token');
         if (!token) {
             console.error("No hay token de autenticación");
             return;
         }
+
         const response = await fetch(`http://localhost:8080/api/rutas/${rutaData.rutaId}/paradas`, {
             method: 'POST',
             headers: {
@@ -287,7 +284,7 @@ const handleCalcularDistanciaYCostos = async () => {
             },
             body: JSON.stringify(paradasParaEnviar)
         });
-        console.log('Paradas enviadas:', JSON.stringify(paradasParaEnviar));
+
         if (!response.ok) {
             throw new Error('Error al guardar las paradas');
         }
@@ -295,7 +292,9 @@ const handleCalcularDistanciaYCostos = async () => {
         const data = await response.json();
         console.log('Paradas guardadas exitosamente:', data);
         alert("¡Todas las paradas han sido registradas exitosamente!");
-                    history.push('/home');
+
+       // Notificar al componente padre (Conductor) sobre el éxito
+        onSuccess("Paradas registradas exitosamente");
     } catch (error) {
         console.error('Error al guardar las paradas:', error);
     }

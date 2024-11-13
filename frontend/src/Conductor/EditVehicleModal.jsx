@@ -16,7 +16,7 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
     const fetchVehicleData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/conductores/${userId}/vehiculo`, {
+            const response = await fetch(`http://localhost:8080/auth/conductor/${userId}/vehiculo`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -29,11 +29,19 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
         }
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setVehicleData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/conductores/${userId}/vehiculo`, {
+            const response = await fetch(`http://localhost:8080/auth/conductor/${userId}/editar-vehiculo`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -58,8 +66,9 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
                         <label className="block text-sm font-medium text-gray-700">Placas</label>
                         <input
                             type="text"
+                            name="placas"
                             value={vehicleData.placas}
-                            onChange={(e) => setVehicleData({...vehicleData, placas: e.target.value})}
+                            onChange={handleInputChange}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         />
@@ -68,8 +77,9 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
                         <label className="block text-sm font-medium text-gray-700">Descripción</label>
                         <input
                             type="text"
+                            name="descripcion"
                             value={vehicleData.descripcion}
-                            onChange={(e) => setVehicleData({...vehicleData, descripcion: e.target.value})}
+                            onChange={handleInputChange}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         />
@@ -78,8 +88,9 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
                         <label className="block text-sm font-medium text-gray-700">Modelo</label>
                         <input
                             type="text"
+                            name="modelo"
                             value={vehicleData.modelo}
-                            onChange={(e) => setVehicleData({...vehicleData, modelo: e.target.value})}
+                            onChange={handleInputChange}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         />
@@ -88,8 +99,9 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
                         <label className="block text-sm font-medium text-gray-700">Color</label>
                         <input
                             type="text"
+                            name="color"
                             value={vehicleData.color}
-                            onChange={(e) => setVehicleData({...vehicleData, color: e.target.value})}
+                            onChange={handleInputChange}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         />

@@ -152,6 +152,7 @@ function Register() {
                 nombre: formData.nombre,
                 email: formData.email,
                 boleta: formData.boleta,
+                calificacion: formData.calificacion,
                 hasFotoPerfil: !!formData.fotoPerfil
             });
     

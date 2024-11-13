@@ -19,7 +19,8 @@ function Home({ onLogout }) {
         descripcion: null,
         modelo: null,
         color: null,
-        email: ''
+        email: '',
+        calificacion: null
     });
 
     useEffect(() => {
@@ -41,7 +42,8 @@ function Home({ onLogout }) {
                     descripcion: decodedToken.descripcion || "No aplica",
                     modelo: decodedToken.modelo || "No aplica",
                     color: decodedToken.color || "No aplica",
-                    email: decodedToken.sub
+                    email: decodedToken.sub,
+                    calificacion: decodedToken.calificacion
                 });
             } catch (error) {
                 console.error('Error al decodificar el token', error);

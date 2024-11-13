@@ -6,24 +6,23 @@ import Register from './Auth/Register';
 import Home from './Home-page/Home';
 import { GoogleMapsProvider } from './GoogleMapsContext';
 
-// Componente para rutas protegidas
-const PrivateRoute = ({ children, isAuthenticated, ...rest }) => (
-  <Route
-    {...rest}
-    render={({ location }) =>
-      isAuthenticated ? (
-        children
-      ) : (
-        <Redirect
-          to={{
-            pathname: "/login",
-            state: { from: location }
-          }}
-        />
-      )
-    }
-  />
-);
+const PrivateRoute = ({ children, ...rest }) => {
+  const token = localStorage.getItem('token');
+  const isAuthenticated = token && jwtDecode(token)?.exp > Date.now() / 1000;
+  
+  return (
+    <Route
+      {...rest}
+      render={({ location }) =>
+        isAuthenticated ? (
+          children
+        ) : (
+          <Redirect to={{ pathname: "/login", state: { from: location } }} />
+        )
+      }
+    />
+  );
+};
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -39,17 +38,13 @@ function App() {
       try {
         const decodedToken = jwtDecode(token);
         const currentTime = Date.now() / 1000;
-        
-        if (decodedToken.exp > currentTime) {
-          setIsLoggedIn(true);
-        } else {
-          // Token expirado
-          handleLogout();
-        }
+        setIsLoggedIn(decodedToken.exp > currentTime);
       } catch (error) {
         console.error("Error al decodificar el token:", error);
         handleLogout();
       }
+    } else {
+      setIsLoggedIn(false);
     }
     setIsLoading(false);
   };
@@ -75,33 +70,18 @@ function App() {
             {isLoggedIn ? <Redirect to="/home" /> : <Redirect to="/login" />}
           </Route>
 
-          <Route 
-            path="/login"
-            render={(props) => 
-              isLoggedIn ? (
-                <Redirect to="/home" />
-              ) : (
-                <Login {...props} setIsLoggedIn={setIsLoggedIn} />
-              )
-            }
-          />
+          <Route path="/login">
+            {isLoggedIn ? <Redirect to="/home" /> : <Login setIsLoggedIn={setIsLoggedIn} />}
+          </Route>
 
-          <Route 
-            path="/register"
-            render={(props) => 
-              isLoggedIn ? (
-                <Redirect to="/home" />
-              ) : (
-                <Register {...props} />
-              )
-            }
-          />
+          <Route path="/register">
+            {isLoggedIn ? <Redirect to="/home" /> : <Register />}
+          </Route>
 
-          <PrivateRoute path="/home" isAuthenticated={isLoggedIn}>
+          <PrivateRoute path="/home">
             <Home onLogout={handleLogout} />
           </PrivateRoute>
 
-          {/* Ruta de fallback para URLs no encontradas */}
           <Route path="*">
             <div className="flex flex-col items-center justify-center min-h-screen">
               <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>

@@ -85,7 +85,7 @@ public abstract class Usuario implements UserDetails {
     public Usuario() {}
 
     public Usuario(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password,
-                   int boleta, boolean avisoPrivacidad, String sexo) {
+                   int boleta, boolean avisoPrivacidad, String sexo, double calificacion) {
         this.nombre = nombre;
         this.apellidoPaterno = apellidoPaterno;
         this.apellidoMaterno = apellidoMaterno;
@@ -94,6 +94,7 @@ public abstract class Usuario implements UserDetails {
         this.boleta = boleta;
         this.avisoPrivacidad = avisoPrivacidad;
         this.sexo = sexo;
+        this.calificacion = calificacion;
     }
 
 

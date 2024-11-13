@@ -1,12 +1,10 @@
 package com.example.student_connect.security.controller;
 
-import com.example.student_connect.security.dto.JwtDto;
-import com.example.student_connect.security.dto.LoginUsuario;
-import com.example.student_connect.security.dto.NuevoConductor;
-import com.example.student_connect.security.dto.NuevoPasajero;
+import com.example.student_connect.security.dto.*;
 import com.example.student_connect.security.entity.Conductor;
 import com.example.student_connect.security.entity.Pasajero;
 import com.example.student_connect.security.entity.Rol;
+import com.example.student_connect.security.entity.Usuario;
 import com.example.student_connect.security.enums.RolNombre;
 import com.example.student_connect.security.jwt.JwtProvider;
 import com.example.student_connect.security.service.UsuarioService;
@@ -15,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,6 +30,7 @@ import com.example.student_connect.security.service.BlobStorageService;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -95,7 +95,8 @@ public class AuthController {
                 passwordEncoder.encode(nuevoPasajero.getPassword()),
                 nuevoPasajero.getBoleta(),
                 nuevoPasajero.isAvisoPrivacidad(),
-                nuevoPasajero.getSexo()
+                nuevoPasajero.getSexo(),
+                nuevoPasajero.getCalificacion()
         );
 
         if (fotoPerfilUrl != null) {
@@ -170,7 +171,8 @@ public class AuthController {
                     nuevoConductor.getDescripcion(),
                     nuevoConductor.getModelo(),
                     nuevoConductor.getColor(),
-                    nuevoConductor.getSexo()
+                    nuevoConductor.getSexo(),
+                    nuevoConductor.getCalificacion()
             );
 
             if (fotoPerfilUrl != null) {
@@ -216,6 +218,75 @@ public class AuthController {
             return new ResponseEntity<>(new Mensaje("Credenciales incorrectas"), HttpStatus.UNAUTHORIZED);
         }
     }
+
+    @PutMapping("/conductor/{idConductor}/editar-vehiculo")
+    @PreAuthorize("hasRole('CONDUCTOR')")
+    public ResponseEntity<?> actualizarVehiculo(
+            @PathVariable("idConductor") Integer idConductor,
+            @RequestBody VehiculoRequest vehiculoRequest) {
+        try {
+            Optional<Usuario> optionalUsuario = usuarioService.findById(idConductor);
+            if (!optionalUsuario.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("Conductor no encontrado"), HttpStatus.NOT_FOUND);
+            }
+
+            Usuario usuario = optionalUsuario.get();
+
+            // Verificar si el usuario es un conductor
+            if (usuario instanceof Conductor) {
+                Conductor conductor = (Conductor) usuario;
+
+                // Actualizamos la información del vehículo
+                conductor.setPlacas(vehiculoRequest.getPlacas());
+                conductor.setDescripcion(vehiculoRequest.getDescripcion());
+                conductor.setModelo(vehiculoRequest.getModelo());
+                conductor.setColor(vehiculoRequest.getColor());
+
+                usuarioService.save(conductor);
+
+                return new ResponseEntity<>(new Mensaje("Información del vehículo actualizada correctamente"), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new Mensaje("El usuario no es un conductor"), HttpStatus.BAD_REQUEST);
+            }
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al actualizar la información del vehículo: " + e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+    @GetMapping("/conductor/{idConductor}/vehiculo")
+    @PreAuthorize("hasRole('CONDUCTOR')")
+    public ResponseEntity<?> obtenerDatosVehiculo(@PathVariable("idConductor") Integer idConductor) {
+        try {
+            Optional<Usuario> optionalConductor = usuarioService.findById(idConductor);
+            if (!optionalConductor.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("Conductor no encontrado"), HttpStatus.NOT_FOUND);
+            }
+
+            Usuario usuario = optionalConductor.get();
+
+            // Verificar si el usuario es un conductor
+            if (usuario instanceof Conductor) {
+                Conductor conductor = (Conductor) usuario;
+
+                // Crear una respuesta personalizada con los datos del vehículo
+                VehiculoResponse vehiculoResponse = new VehiculoResponse(
+                        conductor.getId(),
+                        conductor.getPlacas(),
+                        conductor.getDescripcion(),
+                        conductor.getModelo(),
+                        conductor.getColor()
+                );
+
+                return new ResponseEntity<>(vehiculoResponse, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new Mensaje("El usuario no es un conductor"), HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al obtener los datos del vehículo"), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
 
 }

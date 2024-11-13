@@ -19,14 +19,19 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
-    public Optional<Pasajero> getById(Integer id) {
-        return usuarioRepository.findById(id).filter(usuario -> usuario instanceof Pasajero)
-                .map(usuario -> (Pasajero) usuario);
-    }
-
     @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
+    }
+
+    public Optional<Usuario> findById(Integer id) {
+        return usuarioRepository.findById(id);
+    }
+
+    public Optional<Pasajero> getById(Integer id) {
+        return usuarioRepository.findById(id)
+                .filter(usuario -> usuario instanceof Pasajero)
+                .map(usuario -> (Pasajero) usuario);
     }
 
     /**

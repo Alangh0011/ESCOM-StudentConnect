@@ -13,12 +13,9 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-
     useEffect(() => {
         fetchRutas();
     }, [userId]);
-
-    // src/Conductor/VerRutas.jsx
 
     const fetchRutas = async () => {
         try {
@@ -59,10 +56,20 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
         }
     };
 
-    const filteredRutas = rutas.filter(ruta => 
-        ruta.nombreRuta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ruta.fechaPublicacion.includes(searchTerm)
-    );
+    const filteredRutas = rutas.filter((ruta) => {
+        const search = searchTerm.toLowerCase();
+        
+        // Filtrar por fecha, nombre de parada y nombre de ruta
+        const fechaMatch = ruta.fechaPublicacion.includes(search);
+        const nombreRutaMatch = ruta.nombreRuta.toLowerCase().includes(search);
+        
+        // Filtrar por nombre de parada
+        const paradaMatch = ruta.paradas.some(parada => 
+            parada.paradaNombre.toLowerCase().includes(search)
+        );
+
+        return fechaMatch || nombreRutaMatch || paradaMatch;
+    });
 
     return (
         <div className="container mx-auto px-4">
@@ -86,7 +93,7 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Buscar rutas..."
+                            placeholder="Buscar rutas o paradas..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -102,7 +109,6 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
                     </button>
                 </div>
             </div>
-            
 
             {/* Routes Grid */}
             {isLoading ? (

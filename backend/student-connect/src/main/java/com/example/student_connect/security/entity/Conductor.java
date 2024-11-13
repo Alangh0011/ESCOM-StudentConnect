@@ -33,8 +33,8 @@ public class Conductor extends Usuario {
     @NotBlank
     private String color;
 
-    public Conductor(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password, int boleta, boolean avisoPrivacidad, String placas, String descripcion, String modelo, String color, String sexo) {
-        super(nombre, apellidoPaterno, apellidoMaterno, email, password, boleta, avisoPrivacidad, sexo);
+    public Conductor(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password, int boleta, boolean avisoPrivacidad, String placas, String descripcion, String modelo, String color, String sexo, double calificacion) {
+        super(nombre, apellidoPaterno, apellidoMaterno, email, password, boleta, avisoPrivacidad, sexo, calificacion);
         this.placas = placas;
         this.descripcion = descripcion;
         this.modelo = modelo;

@@ -2,6 +2,8 @@ package com.example.student_connect.entity;
 
 import com.example.student_connect.security.entity.Conductor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Data // Para los getters y setters
 @Entity
+@Getter
+@Setter
 @Table(name = "rutas")
 public class Ruta {
     @Id
@@ -79,5 +83,6 @@ public class Ruta {
             paradas.forEach(parada -> parada.setRuta(this));
         }
     }
+
 
 }

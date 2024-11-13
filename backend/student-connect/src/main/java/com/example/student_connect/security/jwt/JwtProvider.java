@@ -45,6 +45,7 @@ public class JwtProvider {
                 .claim("nombre", usuario.getNombre()) // Nombre del usuario
                 .claim("apellidoPaterno", usuario.getApellidoPaterno()) // Apellido paterno
                 .claim("boleta", usuario.getBoleta()) // Boleta
+                .claim("calificacion", usuario.getCalificacion()) // Calificación
 
                 // Si el usuario es un conductor, agrega sus detalles del vehículo
                 .claim("placas", usuario instanceof Conductor ? ((Conductor) usuario).getPlacas() : null)

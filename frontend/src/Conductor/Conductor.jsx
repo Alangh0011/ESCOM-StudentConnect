@@ -20,6 +20,10 @@ const Conductor = ({ userId }) => {
         setSelectedOption(option);
     };
 
+    const handleRutaSuccess = (message) => {
+        showNotification(message, 'success');
+        setSelectedOption('verRutas'); // Cambia la vista a 'verRutas' tras éxito en ParadasControl
+    };
     // Componente de Alerta
     const Alert = ({ message, type }) => (
         <div
@@ -83,7 +87,7 @@ const Conductor = ({ userId }) => {
                     {selectedOption === 'registrarRuta' && (
                         <Ruta 
                             userId={userId} 
-                            onSuccess={(message) => showNotification(message, 'success')}
+                            onSuccess={handleRutaSuccess} // Usar handleRutaSuccess para redireccionar
                             onError={(message) => showNotification(message, 'error')}
                         />
                     )}

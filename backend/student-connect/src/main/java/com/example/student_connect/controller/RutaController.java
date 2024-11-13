@@ -2,23 +2,21 @@ package com.example.student_connect.controller;
 
 import com.example.student_connect.dto.ActualizarDistanciaRequest;
 import com.example.student_connect.dto.ParadaResponse;
+import com.example.student_connect.dto.RutaDetalleResponse;
 import com.example.student_connect.dto.RutaResponse;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.Ruta;
 import com.example.student_connect.service.ParadaService;
 import com.example.student_connect.service.RutaService;
-import com.example.student_connect.security.service.UsuarioService;
 import com.example.student_connect.security.utils.Mensaje;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;  // Añadir esta importación
-
+import com.example.student_connect.security.entity.Usuario;
+import com.example.student_connect.security.service.UsuarioService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +37,9 @@ public class RutaController {
     private ParadaService paradaService;
 
 
+    @Autowired
+    private UsuarioService usuarioService; // Asegúrate de inyectar UsuarioService aquí
+
     // Endpoint para registrar una nueva ruta
     @PostMapping("/nueva")
     @PreAuthorize("hasRole('CONDUCTOR')")
@@ -46,8 +47,8 @@ public class RutaController {
         try {
             Ruta rutaGuardada = rutaService.saveRuta(ruta);
 
-            // Usar el constructor con todos los campos
-            RutaResponse respuesta = new RutaResponse(
+            // Usar el constructor con todos los campos en RutaDetalleResponse
+            RutaDetalleResponse respuesta = new RutaDetalleResponse(
                     rutaGuardada.getRutaId(),
                     rutaGuardada.getNombreRuta(),
                     rutaGuardada.getNumeroPasajeros(),
@@ -62,6 +63,8 @@ public class RutaController {
                     rutaGuardada.getPuntoFinalLat(),
                     rutaGuardada.getPuntoFinalLng(),
                     rutaGuardada.getFechaPublicacion(),
+                    rutaGuardada.getDistancia(),
+                    rutaGuardada.getTiempo(),
                     new ArrayList<>()
             );
 
@@ -73,6 +76,7 @@ public class RutaController {
             );
         }
     }
+
 
     @PostMapping("/{rutaId}/actualizarDistancia")
     @PreAuthorize("hasRole('CONDUCTOR')")
@@ -108,13 +112,18 @@ public class RutaController {
                             ruta.getNumeroPasajeros(),
                             ruta.getNumeroParadas(),
                             ruta.getCostoGasolina(),
-                            ruta.getTipoRuta(),
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
                             ruta.getFechaPublicacion(),
+                            ruta.getDistancia(),
+                            ruta.getTiempo(),
                             ruta.getParadas().stream()
-                                    .map(parada -> new ParadaResponse(parada.getParadaNombre(), parada.getCostoParada()))
+                                    .map(parada -> new ParadaResponse(
+                                            parada.getParadaNombre(),
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada()
+                                    ))
                                     .collect(Collectors.toList())
                     ))
                     .collect(Collectors.toList());
@@ -147,15 +156,17 @@ public class RutaController {
                             ruta.getNumeroPasajeros(),
                             ruta.getNumeroParadas(),
                             ruta.getCostoGasolina(),
-                            ruta.getTipoRuta(),
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
                             ruta.getFechaPublicacion(),
+                            ruta.getDistancia(),
+                            ruta.getTiempo(),
                             ruta.getParadas().stream()
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
-                                            parada.getCostoParada()
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada()
                                     ))
                                     .collect(Collectors.toList())
                     ))
@@ -237,17 +248,36 @@ public class RutaController {
 
 
 
-
     // Endpoint para eliminar una ruta por ID
     @DeleteMapping("/{rutaId}")
     @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> deleteRuta(@PathVariable("rutaId") Integer rutaId) {
         try {
+            Optional<Ruta> optionalRuta = rutaService.getRutaById(rutaId);
+            if (!optionalRuta.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
+            }
+
+            Ruta ruta = optionalRuta.get();
+            Integer idConductor = ruta.getConductor().getId(); // Asegúrate de tener el ID del conductor asociado a la ruta
+
+            // Eliminar la ruta
             rutaService.deleteRutaById(rutaId);
-            return new ResponseEntity<>(new Mensaje("Ruta eliminada correctamente"), HttpStatus.OK);
+
+            // Reducir calificación del conductor
+            Optional<Usuario> optionalConductor = usuarioService.findById(idConductor);
+            if (optionalConductor.isPresent()) {
+                Usuario conductor = optionalConductor.get();
+                double nuevaCalificacion = Math.max(0, conductor.getCalificacion() - 0.2); // Resta 0.5 puntos como ejemplo
+                conductor.setCalificacion(nuevaCalificacion);
+                usuarioService.save(conductor); // Guarda la nueva calificación del conductor
+            }
+
+            return new ResponseEntity<>(new Mensaje("Ruta eliminada correctamente y calificación actualizada"), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new Mensaje("Error al eliminar la ruta"), HttpStatus.BAD_REQUEST);
         }
     }
+
 
 }

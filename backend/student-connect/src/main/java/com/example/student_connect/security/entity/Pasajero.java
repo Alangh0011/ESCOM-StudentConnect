@@ -10,13 +10,14 @@ import java.util.Set;
 @Table(name = "pasajero")
 public class Pasajero extends Usuario {
 
-    public Pasajero(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password, int boleta, boolean avisoPrivacidad, String sexo) {
-        super(nombre, apellidoPaterno, apellidoMaterno, email, password, boleta, avisoPrivacidad, sexo);
+    public Pasajero(String nombre, String apellidoPaterno, String apellidoMaterno, String email, String password, int boleta, boolean avisoPrivacidad, String sexo, double calificacion) {
+        super(nombre, apellidoPaterno, apellidoMaterno, email, password, boleta, avisoPrivacidad, sexo, calificacion);
     }
 
     public Pasajero() {
         // Constructor vacío para JPA
     }
+
 
     // Asegúrate de que el método setRoles esté disponible en la clase base Usuario
 }
