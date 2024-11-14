@@ -21,6 +21,7 @@ public class RutaService {
     @Autowired
     private RutaRepository rutaRepository;
 
+
     @Autowired
     private ParadaRepository paradaRepository;
 
@@ -29,14 +30,26 @@ public class RutaService {
     }
 
     public List<Ruta> getRutasByConductorInNext7Days(Integer idConductor) {
-        Date startDate = new Date(); // Fecha actual (hoy)
+        // Configurar startDate al inicio del día
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startDate);
-        calendar.add(Calendar.DAY_OF_YEAR, 7); // Sumar 7 días a la fecha actual
-        Date endDate = calendar.getTime(); // Fecha 7 días después
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date startDate = calendar.getTime(); // Fecha actual ajustada al inicio del día
+
+        // Configurar endDate a 7 días después, al final del día
+        calendar.add(Calendar.DAY_OF_YEAR, 7);
+        Date endDate = calendar.getTime();
+
+        // Log para verificar las fechas de inicio y fin
+        log.info("Rango de fechas para la consulta: {} - {}", startDate, endDate);
 
         return rutaRepository.findByConductorIdInFutureDateRange(idConductor, startDate, endDate);
     }
+
+
+
 
     public List<Ruta> getAllRutasInNext7Days() {
         Date startDate = new Date(); // Fecha actual (hoy)

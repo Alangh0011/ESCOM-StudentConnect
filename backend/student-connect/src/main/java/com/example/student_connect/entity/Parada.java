@@ -55,4 +55,7 @@ public class Parada {
                         .contains(t.toLowerCase()));
     }
 
+    @Column(name = "ocupado")
+    private boolean ocupado = false; // Nueva columna para marcar si la parada está ocupada o no
+
 }

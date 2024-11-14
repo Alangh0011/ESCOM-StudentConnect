@@ -1,18 +1,22 @@
 package com.example.student_connect.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class ParadaResponse {
-
     private String paradaNombre;
     private double costoParada;
     private double distanciaParada;
+    private boolean ocupado;
 
-    // Constructor
-    public ParadaResponse(String paradaNombre, double costoParada, double distanciaParada) {
+    public ParadaResponse(String paradaNombre, double costoParada, double distanciaParada, boolean ocupado) {
         this.paradaNombre = paradaNombre;
         this.costoParada = costoParada;
         this.distanciaParada = distanciaParada;
+        this.ocupado = ocupado;
     }
 }

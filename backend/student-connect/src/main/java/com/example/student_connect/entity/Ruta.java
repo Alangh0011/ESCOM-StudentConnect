@@ -73,6 +73,8 @@ public class Ruta {
     @Column(name = "distancia")
     private double distancia; // distancia aproximado de la ruta
 
+
+
     @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Parada> paradas = new ArrayList<>();
 

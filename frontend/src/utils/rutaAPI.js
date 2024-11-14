@@ -25,7 +25,7 @@ api.interceptors.request.use(
 
 export const getRutasConductor = async (userId) => {
     try {
-        const response = await api.get(`/rutas/conductor/${userId}`);
+        const response = await api.get(`/rutas/conductor/${userId}/proximos-7-dias`);
         return response.data;
     } catch (error) {
         throw error;

@@ -68,7 +68,8 @@ public class RutaController {
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
-                                            parada.getDistanciaParada()
+                                            parada.getDistanciaParada(),
+                                            parada.isOcupado()
                                     ))
                                     .collect(Collectors.toList())
                     ))
@@ -103,7 +104,8 @@ public class RutaController {
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
-                                            parada.getDistanciaParada()
+                                            parada.getDistanciaParada(),
+                                            parada.isOcupado()
                                     ))
                                     .collect(Collectors.toList())
                     ))
@@ -198,7 +200,8 @@ public class RutaController {
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
-                                            parada.getDistanciaParada()
+                                            parada.getDistanciaParada(),
+                                            parada.isOcupado()
                                     ))
                                     .collect(Collectors.toList())
                     ))
@@ -242,7 +245,8 @@ public class RutaController {
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
-                                            parada.getDistanciaParada()
+                                            parada.getDistanciaParada(),
+                                            parada.isOcupado()
                                     ))
                                     .collect(Collectors.toList())
                     ))

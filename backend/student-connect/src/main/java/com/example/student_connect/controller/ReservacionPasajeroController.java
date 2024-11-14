@@ -63,7 +63,8 @@ public class ReservacionPasajeroController {
                                     .map(parada -> new ParadaResponse(
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
-                                            parada.getDistanciaParada()
+                                            parada.getDistanciaParada(),
+                                            parada.isOcupado() // Agrega el estado ocupado aquí
                                     ))
                                     .collect(Collectors.toList()),
                             ruta.getConductor().getNombre(),
@@ -82,21 +83,40 @@ public class ReservacionPasajeroController {
         }
     }
 
+
     @PostMapping("/crear")
     public ResponseEntity<?> crearReservacion(@RequestBody ReservacionRequest request) {
+        try {
+            // Obtención de entidades
+            Pasajero pasajero = (Pasajero) usuarioService.getById(request.getPasajeroId())
+                    .orElseThrow(() -> new IllegalArgumentException("El pasajero no existe."));
+            Ruta ruta = rutaService.getRutaById(request.getRutaId())
+                    .orElseThrow(() -> new IllegalArgumentException("La ruta no existe."));
+            Parada parada = paradaService.getById(request.getParadaId())
+                    .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));
 
-        // Obtención de entidades
-        Pasajero pasajero = (Pasajero) usuarioService.getById(request.getPasajeroId())
-                .orElseThrow(() -> new IllegalArgumentException("El pasajero no existe."));
-        Ruta ruta = rutaService.getRutaById(request.getRutaId())
-                .orElseThrow(() -> new IllegalArgumentException("La ruta no existe."));
-        Parada parada = paradaService.getById(request.getParadaId())
-                .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));
+            // Verificar si la parada ya está ocupada
+            if (parada.isOcupado()) {
+                return new ResponseEntity<>(new Mensaje("La parada ya está ocupada"), HttpStatus.BAD_REQUEST);
+            } else {
+                // Incrementar el número de pasajeros de la ruta
+                ruta.setNumeroPasajeros(ruta.getNumeroPasajeros() + 1);
+                parada.setOcupado(true);
+            }
 
+            // Guardar la actualización de la ruta y la parada
+            rutaService.saveRuta(ruta);
+            paradaService.saveParada(parada);
 
-        // Creación de la reservación
-        ReservacionPasajero reservacion = reservacionPasajeroService.crearReservacion(pasajero, ruta, parada, request.getTipoRuta());
-        return new ResponseEntity<>(reservacion, HttpStatus.CREATED);
+            // Crear y guardar la reservación
+            reservacionPasajeroService.crearReservacion(pasajero, ruta, parada, request.getTipoRuta());
+
+            // Responder con un mensaje simple
+            return new ResponseEntity<>(new Mensaje("Reserva creada correctamente"), HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(new Mensaje("Error al crear la reserva: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-}
 
+}
