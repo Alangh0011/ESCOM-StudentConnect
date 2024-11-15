@@ -23,10 +23,8 @@ import com.example.student_connect.service.ReservacionPasajeroService;
 import com.example.student_connect.security.entity.Pasajero;
 import com.example.student_connect.dto.PasajeroInfoResponse;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import javax.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -59,6 +57,16 @@ public class RutaController {
         try {
             List<Ruta> rutas = rutaService.getRutasByConductorInNext7Days(idConductor);
 
+            // Obtener todas las reservaciones existentes
+            List<ReservacionPasajero> reservaciones = reservacionPasajeroService.getAllReservaciones();
+
+            // Crear un mapa de paradaId -> ReservacionPasajero
+            Map<Integer, ReservacionPasajero> reservacionesPorParada = reservaciones.stream()
+                    .collect(Collectors.toMap(
+                            r -> r.getParada().getParadaId(),
+                            r -> r
+                    ));
+
             List<RutaResponse> rutaResponses = rutas.stream()
                     .map(ruta -> new RutaResponse(
                             ruta.getRutaId(),
@@ -75,14 +83,13 @@ public class RutaController {
                             ruta.getTipoRuta(),
                             ruta.getParadas().stream()
                                     .map(parada -> {
-                                        // Buscar la reservación asociada a esta parada
-                                        Optional<ReservacionPasajero> reservacionOpt =
-                                                reservacionPasajeroService.findByParada(parada);
+                                        // Obtener la reservación si existe
+                                        ReservacionPasajero reservacion = reservacionesPorParada.get(parada.getParadaId());
 
-                                        // Crear PasajeroInfoResponse si hay reservación
+                                        // Crear PasajeroInfoResponse solo si hay reservación con pasajero
                                         PasajeroInfoResponse pasajeroInfo = null;
-                                        if (reservacionOpt.isPresent() && reservacionOpt.get().getPasajero() != null) {
-                                            Pasajero pasajero = reservacionOpt.get().getPasajero();
+                                        if (reservacion != null && reservacion.getPasajero() != null) {
+                                            Pasajero pasajero = reservacion.getPasajero();
                                             pasajeroInfo = new PasajeroInfoResponse(
                                                     pasajero.getId(),
                                                     pasajero.getNombre(),
@@ -96,7 +103,7 @@ public class RutaController {
                                                 parada.getParadaNombre(),
                                                 parada.getCostoParada(),
                                                 parada.getDistanciaParada(),
-                                                parada.isOcupado(),
+                                                reservacion != null, // ocupado solo si hay reservación
                                                 pasajeroInfo
                                         );
                                     })
@@ -106,8 +113,10 @@ public class RutaController {
 
             return new ResponseEntity<>(rutaResponses, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas: " + e.getMessage()),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(
+                    new Mensaje("Error al obtener las rutas: " + e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -367,30 +376,44 @@ public class RutaController {
     // Endpoint para eliminar una ruta por ID
     @DeleteMapping("/{rutaId}")
     @PreAuthorize("hasRole('CONDUCTOR')")
+    @Transactional
     public ResponseEntity<?> deleteRuta(@PathVariable("rutaId") Integer rutaId) {
         try {
+            log.info("Iniciando eliminación de ruta ID: {}", rutaId);
             Optional<Ruta> optionalRuta = rutaService.getRutaById(rutaId);
             if (!optionalRuta.isPresent()) {
+                log.warn("Ruta no encontrada: {}", rutaId);
                 return new ResponseEntity<>(new Mensaje("Ruta no encontrada"), HttpStatus.NOT_FOUND);
             }
 
             Ruta ruta = optionalRuta.get();
-            Integer idConductor = ruta.getConductor().getId(); // Asegúrate de tener el ID del conductor asociado a la ruta
+            Integer idConductor = ruta.getConductor().getId(); // Obtener el ID del conductor de la ruta
+            log.info("Ruta encontrada. Paradas asociadas: {}", ruta.getParadas().size());
+
+            // Primero eliminar las reservaciones asociadas a las paradas
+            for (Parada parada : ruta.getParadas()) {
+                Optional<ReservacionPasajero> reservacion = reservacionPasajeroService.findByParada(parada);
+                if (reservacion.isPresent()) {
+                    reservacionPasajeroService.deleteById(reservacion.get().getIdReservacion());
+                }
+            }
 
             // Eliminar la ruta
             rutaService.deleteRutaById(rutaId);
+            log.info("Ruta eliminada exitosamente");
 
-            // Reducir calificación del conductor
+            // Actualizar calificación del conductor
             Optional<Usuario> optionalConductor = usuarioService.findById(idConductor);
             if (optionalConductor.isPresent()) {
                 Usuario conductor = optionalConductor.get();
-                double nuevaCalificacion = Math.max(0, conductor.getCalificacion() - 0.2); // Resta 0.5 puntos como ejemplo
+                double nuevaCalificacion = Math.max(0, conductor.getCalificacion() - 0.2);
                 conductor.setCalificacion(nuevaCalificacion);
-                usuarioService.save(conductor); // Guarda la nueva calificación del conductor
+                usuarioService.save(conductor);
             }
 
-            return new ResponseEntity<>(new Mensaje("Ruta eliminada correctamente y calificación actualizada"), HttpStatus.OK);
+            return new ResponseEntity<>(new Mensaje("Ruta eliminada correctamente"), HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Error al eliminar ruta: ", e);
             return new ResponseEntity<>(new Mensaje("Error al eliminar la ruta"), HttpStatus.BAD_REQUEST);
         }
     }

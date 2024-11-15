@@ -15,14 +15,10 @@ public class ParadaResponse {
     private boolean ocupado;
     private PasajeroInfoResponse pasajero;
 
-    // Constructor sin el pasajero
-    public ParadaResponse(Integer paradaId, String paradaNombre, double costoParada,
-                          double distanciaParada, boolean ocupado) {
-        this.paradaId = paradaId;
-        this.paradaNombre = paradaNombre;
-        this.costoParada = costoParada;
-        this.distanciaParada = distanciaParada;
-        this.ocupado = ocupado;
-        this.pasajero = null;
+    // Constructor sin pasajero para las rutas públicas
+    public ParadaResponse(Integer paradaId, String paradaNombre,
+                          double costoParada, double distanciaParada,
+                          boolean ocupado) {
+        this(paradaId, paradaNombre, costoParada, distanciaParada, ocupado, null);
     }
 }

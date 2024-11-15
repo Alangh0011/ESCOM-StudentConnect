@@ -14,6 +14,15 @@ import java.util.List;
 @Repository
 public interface RutaRepository extends JpaRepository<Ruta, Integer> {
 
+
+    // Consulta específica para pasajeros en el rango de fechas
+    @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas " +
+            "WHERE r.fechaPublicacion BETWEEN :startDate AND :endDate")
+    List<Ruta> findAllInFutureDateRangeForPassengers(
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate
+    );
+
     @Query(value = "SELECT r FROM Ruta r WHERE r.conductor.id = :idConductor",
             countQuery = "SELECT COUNT(r) FROM Ruta r WHERE r.conductor.id = :idConductor")
     Page<Ruta> findRutasByConductorAndDate(

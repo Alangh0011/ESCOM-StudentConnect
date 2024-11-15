@@ -1,6 +1,7 @@
 package com.example.student_connect.entity;
 
 import com.example.student_connect.security.entity.Conductor;
+import com.example.student_connect.entity.Parada;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -73,16 +74,33 @@ public class Ruta {
     @Column(name = "distancia")
     private double distancia; // distancia aproximado de la ruta
 
-
-
-    @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "ruta",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<Parada> paradas = new ArrayList<>();
 
+    @OneToMany(mappedBy = "ruta",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private List<ReservacionPasajero> reservaciones = new ArrayList<>();
+
+    // Métodos helper
+    public void addParada(Parada parada) {
+        paradas.add(parada);
+        parada.setRuta(this);
+    }
+
+    public void removeParada(Parada parada) {
+        paradas.remove(parada);
+        parada.setRuta(null);
+    }
+
     public void setParadas(List<Parada> paradas) {
-        this.paradas = paradas;
-        // Mantener la bidireccionalidad
+        this.paradas.clear();
         if (paradas != null) {
-            paradas.forEach(parada -> parada.setRuta(this));
+            paradas.forEach(this::addParada);
         }
     }
 

@@ -29,6 +29,23 @@ public class RutaService {
         this.rutaRepository = rutaRepository;
     }
 
+
+    // Método específico para pasajeros
+    public List<Ruta> getAllRutasInNext7DaysForPassengers() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date startDate = calendar.getTime();
+
+        calendar.add(Calendar.DAY_OF_YEAR, 7);
+        Date endDate = calendar.getTime();
+
+        log.info("Consultando rutas para pasajeros en el rango: {} - {}", startDate, endDate);
+        return rutaRepository.findAllInFutureDateRangeForPassengers(startDate, endDate);
+    }
+
     public List<Ruta> getRutasByConductorInNext7Days(Integer idConductor) {
         // Configurar startDate al inicio del día
         Calendar calendar = Calendar.getInstance();

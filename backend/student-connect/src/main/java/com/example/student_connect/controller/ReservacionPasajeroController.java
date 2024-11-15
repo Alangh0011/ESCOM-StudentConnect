@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -44,8 +45,17 @@ public class ReservacionPasajeroController {
     @GetMapping("/proximos-7-dias")
     public ResponseEntity<?> getAllRutasWithConductorInNext7Days() {
         try {
-            List<Ruta> rutas = rutaService.getAllRutasInNext7Days();
+            List<Ruta> rutas = rutaService.getAllRutasInNext7DaysForPassengers();
 
+            // Obtener todas las reservaciones existentes
+            List<ReservacionPasajero> reservaciones = reservacionPasajeroService.getAllReservaciones();
+
+            // Crear un conjunto de IDs de paradas ocupadas
+            Set<Integer> paradasOcupadas = reservaciones.stream()
+                    .map(r -> r.getParada().getParadaId())
+                    .collect(Collectors.toSet());
+
+            // Convertir las rutas a RutaResponse sin incluir información de pasajeros
             List<RutaResponse> rutasResponses = rutas.stream()
                     .map(ruta -> new RutaResponse(
                             ruta.getRutaId(),
@@ -61,32 +71,13 @@ public class ReservacionPasajeroController {
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),
                             ruta.getParadas().stream()
-                                    .map(parada -> {
-                                        // Buscar la reservación asociada a esta parada
-                                        Optional<ReservacionPasajero> reservacionOpt =
-                                                reservacionPasajeroService.findByParada(parada);
-
-                                        // Crear PasajeroInfoResponse si hay reservación
-                                        PasajeroInfoResponse pasajeroInfo = null;
-                                        if (reservacionOpt.isPresent() && reservacionOpt.get().getPasajero() != null) {
-                                            Pasajero pasajero = reservacionOpt.get().getPasajero();
-                                            pasajeroInfo = new PasajeroInfoResponse(
-                                                    pasajero.getId(),
-                                                    pasajero.getNombre(),
-                                                    pasajero.getApellidoPaterno(),
-                                                    pasajero.getBoleta()
-                                            );
-                                        }
-
-                                        return new ParadaResponse(
-                                                parada.getParadaId(),
-                                                parada.getParadaNombre(),
-                                                parada.getCostoParada(),
-                                                parada.getDistanciaParada(),
-                                                parada.isOcupado(),
-                                                pasajeroInfo
-                                        );
-                                    })
+                                    .map(parada -> new ParadaResponse(
+                                            parada.getParadaId(),
+                                            parada.getParadaNombre(),
+                                            parada.getCostoParada(),
+                                            parada.getDistanciaParada(),
+                                            paradasOcupadas.contains(parada.getParadaId())  // Determinar ocupación real
+                                    ))
                                     .collect(Collectors.toList())
                     ))
                     .collect(Collectors.toList());
@@ -95,8 +86,11 @@ public class ReservacionPasajeroController {
         } catch (Exception e) {
             return new ResponseEntity<>(new Mensaje("Error al obtener las rutas: " + e.getMessage()),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
     }
+
+
 
 
 
@@ -111,9 +105,10 @@ public class ReservacionPasajeroController {
             Parada parada = paradaService.getById(request.getParadaId().intValue())
                     .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));
 
-            // Verificar si la parada ya está ocupada
-            if (parada.isOcupado()) {
-                return new ResponseEntity<>(new Mensaje("La parada ya está ocupada"), HttpStatus.BAD_REQUEST);
+            // Verificar si la parada ya está reservada (usando las reservaciones existentes)
+            Optional<ReservacionPasajero> reservacionExistente = reservacionPasajeroService.findByParada(parada);
+            if (reservacionExistente.isPresent()) {
+                return new ResponseEntity<>(new Mensaje("La parada ya está reservada"), HttpStatus.BAD_REQUEST);
             }
 
             // Convertir el tipo de ruta de String a char
@@ -135,7 +130,7 @@ public class ReservacionPasajeroController {
             List<ReservacionPasajero> reservacionesHoy = reservacionPasajeroService
                     .findByPasajeroAndTipoRutaAndFechaBetween(
                             pasajero.getId(),
-                            tipoRutaRequest, // Usar la variable convertida
+                            tipoRutaRequest,
                             startOfDay,
                             endOfDay
                     );
@@ -158,13 +153,6 @@ public class ReservacionPasajeroController {
             // Incrementar el número de pasajeros de la ruta
             ruta.setNumeroPasajeros(ruta.getNumeroPasajeros() + 1);
 
-            // Marcar la parada como ocupada
-            parada.setOcupado(true);
-
-            // Guardar la actualización de la ruta y la parada
-            rutaService.saveRuta(ruta);
-            paradaService.saveParada(parada);
-
             // Crear y guardar la reservación usando el char convertido
             ReservacionPasajero nuevaReservacion = reservacionPasajeroService.crearReservacion(
                     pasajero,
@@ -172,6 +160,9 @@ public class ReservacionPasajeroController {
                     parada,
                     tipoRutaRequest
             );
+
+            // Actualizar el estado de ocupación de todas las paradas basado en las reservaciones actuales
+            paradaService.sincronizarEstadoOcupacion();
 
             return new ResponseEntity<>(
                     new Mensaje("Reserva creada correctamente"),

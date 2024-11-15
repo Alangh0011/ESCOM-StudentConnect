@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getRutasConductor, eliminarRuta } from '../utils/rutaAPI';
 import DeleteRouteModal from './DeleteRouteModal';
 import EditVehicleModal from './EditVehicleModal';
-import { SearchIcon } from 'lucide-react';
+import { SearchIcon, User, UserX } from 'lucide-react'; // Añadimos íconos
 
 const VerRutas = ({ userId, onSuccess, onError }) => {
     const [rutas, setRutas] = useState([]);
@@ -71,6 +71,44 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
         return fechaMatch || nombreRutaMatch || paradaMatch;
     });
 
+    const ParadaCard = ({ parada }) => (
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="font-medium text-gray-800">{parada.paradaNombre}</p>
+                    <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
+                        <p>Distancia: {parada.distanciaParada} km</p>
+                        <p>Costo: ${parada.costoParada}</p>
+                    </div>
+                </div>
+                <div className="flex items-center">
+                    {parada.ocupado ? (
+                        parada.pasajero ? (
+                            <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                                <User className="h-4 w-4 mr-2" />
+                                <div>
+                                    <p className="text-sm font-medium">
+                                        {parada.pasajero.nombre} {parada.pasajero.apellidoPaterno}
+                                    </p>
+                                    <p className="text-xs">Boleta: {parada.pasajero.boleta}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm flex items-center">
+                                <UserX className="h-4 w-4 mr-2" />
+                                Reservado sin datos
+                            </span>
+                        )
+                    ) : (
+                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+                            Disponible
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="container mx-auto px-4">
             {/* Header Section */}
@@ -124,8 +162,32 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
                     ) : (
                         filteredRutas.map((ruta) => (
                             <div key={ruta.rutaId} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                                {/* Header de la ruta */}
                                 <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-xl font-semibold text-gray-800">{ruta.nombreRuta}</h3>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-800">{ruta.nombreRuta}</h3>
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Distancia:</span> {ruta.distancia} km
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Fecha:</span> {new Date(ruta.fechaPublicacion).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Horario:</span> {ruta.horario}
+                                            </p>
+                                            <div className="flex items-center space-x-2">
+                                                <span className="font-medium text-sm text-gray-600">Estado:</span>
+                                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                                    ruta.numeroPasajeros >= ruta.numeroParadas
+                                                        ? 'bg-red-100 text-red-800'
+                                                        : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {ruta.numeroPasajeros}/{ruta.numeroParadas} asientos ocupados
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <button
                                         onClick={() => {
                                             setSelectedRuta(ruta);
@@ -139,31 +201,14 @@ const VerRutas = ({ userId, onSuccess, onError }) => {
                                     </button>
                                 </div>
 
-                                <div className="space-y-2 text-gray-600">
-                                    <p className="flex items-center">
-                                        <span className="font-medium mr-2">Distancia:</span>
-                                        {ruta.distancia} km
-                                    </p>
-                                    <p className="flex items-center">
-                                        <span className="font-medium mr-2">Fecha:</span>
-                                        {new Date(ruta.fechaPublicacion).toLocaleDateString()}
-                                    </p>
-                                    
-                                    {/* Paradas Section */}
-                                    <div className="mt-4">
-                                        <h4 className="font-semibold text-gray-800 mb-2">Paradas</h4>
+                                {/* Sección de paradas */}
+                                <div className="mt-6">
+                                    <h4 className="font-semibold text-gray-800 mb-3">Paradas</h4>
+                                    <div className="space-y-3">
                                         {ruta.paradas && ruta.paradas.length > 0 ? (
-                                            <div className="space-y-3">
-                                                {ruta.paradas.map((parada, index) => (
-                                                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                                                        <p className="font-medium text-gray-800">{parada.paradaNombre}</p>
-                                                        <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
-                                                            <p>Distancia: {parada.distanciaParada} km</p>
-                                                            <p>Costo: ${parada.costoParada}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                            ruta.paradas.map((parada, index) => (
+                                                <ParadaCard key={parada.paradaId} parada={parada} />
+                                            ))
                                         ) : (
                                             <p className="text-gray-500">No hay paradas registradas</p>
                                         )}

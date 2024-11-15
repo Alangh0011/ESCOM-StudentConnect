@@ -15,7 +15,7 @@ public class Parada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer paradaId; // Cambiado de idParadas a paradaId
+    private Integer paradaId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ruta_id", nullable = false)
@@ -58,4 +58,15 @@ public class Parada {
     @Column(name = "ocupado")
     public boolean ocupado = false; // Nueva columna para marcar si la parada está ocupada o no
 
+
+    @OneToOne(mappedBy = "parada",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private ReservacionPasajero reservacion;
+
+    // Ya no necesitas el campo ocupado
+    @Transient
+    public boolean isOcupado() {
+        return reservacion != null;
+    }
 }

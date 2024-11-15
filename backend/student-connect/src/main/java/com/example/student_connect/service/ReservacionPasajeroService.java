@@ -54,4 +54,14 @@ public class ReservacionPasajeroService {
     public Optional<ReservacionPasajero> findByParada(Parada parada) {
         return reservacionPasajeroRepository.findByParada(parada);
     }
+
+    public List<ReservacionPasajero> getAllReservaciones() {
+        return reservacionPasajeroRepository.findAll();
+    }
+
+    // Agregar método para eliminar por ID
+    public void deleteById(Integer id) {
+        reservacionPasajeroRepository.deleteById(id);
+    }
+
 }

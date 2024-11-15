@@ -13,23 +13,23 @@ public class ReservacionPasajero {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idReservacion;
+    private Integer idReservacion; // Cambiar de Long a Integer
 
-    @ManyToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_paradas", nullable = false)
-    private Parada parada; // Parada seleccionada por el pasajero
+    private Parada parada;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ruta_id", nullable = false)
-    private Ruta ruta; // Ruta seleccionada
+    private Ruta ruta;
 
-    @ManyToOne
-    @JoinColumn(name = "id_pasajero", nullable = false)
-    private Pasajero pasajero; // Pasajero que realiza la reservación
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_conductor", nullable = false)
-    private Conductor conductor; // Conductor asociado a la ruta
+    private Conductor conductor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_pasajero", nullable = false)
+    private Pasajero pasajero;
 
     @Column(name = "tipo_ruta", nullable = false)
     private char tipoRuta; // 'C' o 'E'
@@ -38,7 +38,12 @@ public class ReservacionPasajero {
     private LocalDateTime fechaReservacion;
 
     // Constructor por defecto para inicializar la fecha
-    public ReservacionPasajero() {
-        this.fechaReservacion = LocalDateTime.now();
+    @PrePersist
+    private void prePersist() {
+        if (fechaReservacion == null) {
+            fechaReservacion = LocalDateTime.now();
+        }
     }
+
+
 }
