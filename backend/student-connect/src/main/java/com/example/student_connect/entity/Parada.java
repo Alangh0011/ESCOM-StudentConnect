@@ -15,7 +15,7 @@ public class Parada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idParadas;
+    private Integer paradaId; // Cambiado de idParadas a paradaId
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ruta_id", nullable = false)
@@ -56,6 +56,6 @@ public class Parada {
     }
 
     @Column(name = "ocupado")
-    private boolean ocupado = false; // Nueva columna para marcar si la parada está ocupada o no
+    public boolean ocupado = false; // Nueva columna para marcar si la parada está ocupada o no
 
 }

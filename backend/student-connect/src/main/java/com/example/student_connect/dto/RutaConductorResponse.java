@@ -1,15 +1,13 @@
 package com.example.student_connect.dto;
 
-import com.example.student_connect.security.entity.Conductor;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.Date;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 public class RutaConductorResponse {
     private Integer rutaId;
@@ -23,38 +21,25 @@ public class RutaConductorResponse {
     private Date fechaPublicacion;
     private double distancia;
     private String tiempo;
+    private char tipoRuta; // Se agregó este campo
     private List<ParadaResponse> paradas;
-
-    // Datos del conductor
     private String conductorNombre;
     private String conductorApellido;
     private String conductorEmail;
-    private String vehiculoPlacas;
-    private String vehiculoDescripcion;
-    private String vehiculoModelo;
-    private String vehiculoColor;
+    private String placas;
+    private String descripcion;
+    private String modelo;
+    private String color;
 
-    // Constructor para inicializar todos los campos
-    public RutaConductorResponse(
-            Integer rutaId,
-            String nombreRuta,
-            int numeroPasajeros,
-            int numeroParadas,
-            double costoGasolina,
-            String horario,
-            String puntoInicioNombre,
-            String puntoFinalNombre,
-            Date fechaPublicacion,
-            double distancia,
-            String tiempo,
-            List<ParadaResponse> paradas,
-            String conductorNombre,
-            String conductorApellido,
-            String conductorEmail,
-            String vehiculoPlacas,
-            String vehiculoDescripcion,
-            String vehiculoModelo,
-            String vehiculoColor) {
+    // Constructor específico para el mapeo
+    public RutaConductorResponse(Integer rutaId, String nombreRuta, int numeroPasajeros,
+                                 int numeroParadas, double costoGasolina, String horario,
+                                 String puntoInicioNombre, String puntoFinalNombre,
+                                 Date fechaPublicacion, double distancia, String tiempo,
+                                 char tipoRuta, List<ParadaResponse> paradas,
+                                 String conductorNombre, String conductorApellido,
+                                 String conductorEmail, String placas, String descripcion,
+                                 String modelo, String color) {
         this.rutaId = rutaId;
         this.nombreRuta = nombreRuta;
         this.numeroPasajeros = numeroPasajeros;
@@ -66,13 +51,14 @@ public class RutaConductorResponse {
         this.fechaPublicacion = fechaPublicacion;
         this.distancia = distancia;
         this.tiempo = tiempo;
+        this.tipoRuta = tipoRuta;
         this.paradas = paradas;
         this.conductorNombre = conductorNombre;
         this.conductorApellido = conductorApellido;
         this.conductorEmail = conductorEmail;
-        this.vehiculoPlacas = vehiculoPlacas;
-        this.vehiculoDescripcion = vehiculoDescripcion;
-        this.vehiculoModelo = vehiculoModelo;
-        this.vehiculoColor = vehiculoColor;
+        this.placas = placas;
+        this.descripcion = descripcion;
+        this.modelo = modelo;
+        this.color = color;
     }
 }

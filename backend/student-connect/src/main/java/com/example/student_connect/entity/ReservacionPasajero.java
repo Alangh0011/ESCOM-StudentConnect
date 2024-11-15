@@ -4,6 +4,7 @@ import com.example.student_connect.security.entity.Conductor;
 import com.example.student_connect.security.entity.Pasajero;
 import lombok.Data;
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -32,4 +33,12 @@ public class ReservacionPasajero {
 
     @Column(name = "tipo_ruta", nullable = false)
     private char tipoRuta; // 'C' o 'E'
+
+    @Column(name = "fecha_reservacion")
+    private LocalDateTime fechaReservacion;
+
+    // Constructor por defecto para inicializar la fecha
+    public ReservacionPasajero() {
+        this.fechaReservacion = LocalDateTime.now();
+    }
 }

@@ -7,6 +7,7 @@ import com.example.student_connect.dto.RutaResponse;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.Ruta;
 import com.example.student_connect.service.ParadaService;
+import com.example.student_connect.service.ReservacionPasajeroService;
 import com.example.student_connect.service.RutaService;
 import com.example.student_connect.security.utils.Mensaje;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,10 @@ import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;  // Añadir esta importación
 import com.example.student_connect.security.entity.Usuario;
 import com.example.student_connect.security.service.UsuarioService;
+import com.example.student_connect.entity.ReservacionPasajero;
+import com.example.student_connect.service.ReservacionPasajeroService;
+import com.example.student_connect.security.entity.Pasajero;
+import com.example.student_connect.dto.PasajeroInfoResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,9 +41,12 @@ public class RutaController {
     @Autowired
     private ParadaService paradaService;
 
-
     @Autowired
     private UsuarioService usuarioService; // Asegúrate de inyectar UsuarioService aquí
+
+    @Autowired
+    private ReservacionPasajeroService reservacionPasajeroService; // Agregar este servicio
+
 
     public RutaController(RutaService rutaService) {
         this.rutaService = rutaService;
@@ -64,20 +72,42 @@ public class RutaController {
                             ruta.getFechaPublicacion(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
+                            ruta.getTipoRuta(),
                             ruta.getParadas().stream()
-                                    .map(parada -> new ParadaResponse(
-                                            parada.getParadaNombre(),
-                                            parada.getCostoParada(),
-                                            parada.getDistanciaParada(),
-                                            parada.isOcupado()
-                                    ))
+                                    .map(parada -> {
+                                        // Buscar la reservación asociada a esta parada
+                                        Optional<ReservacionPasajero> reservacionOpt =
+                                                reservacionPasajeroService.findByParada(parada);
+
+                                        // Crear PasajeroInfoResponse si hay reservación
+                                        PasajeroInfoResponse pasajeroInfo = null;
+                                        if (reservacionOpt.isPresent() && reservacionOpt.get().getPasajero() != null) {
+                                            Pasajero pasajero = reservacionOpt.get().getPasajero();
+                                            pasajeroInfo = new PasajeroInfoResponse(
+                                                    pasajero.getId(),
+                                                    pasajero.getNombre(),
+                                                    pasajero.getApellidoPaterno(),
+                                                    pasajero.getBoleta()
+                                            );
+                                        }
+
+                                        return new ParadaResponse(
+                                                parada.getParadaId(),
+                                                parada.getParadaNombre(),
+                                                parada.getCostoParada(),
+                                                parada.getDistanciaParada(),
+                                                parada.isOcupado(),
+                                                pasajeroInfo
+                                        );
+                                    })
                                     .collect(Collectors.toList())
                     ))
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(rutaResponses, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas"), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(new Mensaje("Error al obtener las rutas: " + e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -100,8 +130,10 @@ public class RutaController {
                             ruta.getFechaPublicacion(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
+                            ruta.getTipoRuta(),
                             ruta.getParadas().stream()
                                     .map(parada -> new ParadaResponse(
+                                            parada.getParadaId(),
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
                                             parada.getDistanciaParada(),
@@ -196,8 +228,10 @@ public class RutaController {
                             ruta.getFechaPublicacion(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
+                            ruta.getTipoRuta(),
                             ruta.getParadas().stream()
                                     .map(parada -> new ParadaResponse(
+                                            parada.getParadaId(),
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
                                             parada.getDistanciaParada(),
@@ -241,8 +275,10 @@ public class RutaController {
                             ruta.getFechaPublicacion(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
+                            ruta.getTipoRuta(),
                             ruta.getParadas().stream()
                                     .map(parada -> new ParadaResponse(
+                                            parada.getParadaId(),
                                             parada.getParadaNombre(),
                                             parada.getCostoParada(),
                                             parada.getDistanciaParada(),

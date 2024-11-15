@@ -7,9 +7,15 @@ import lombok.Setter;
 import java.util.Date;
 import java.util.List;
 
-@Getter
-@Setter
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.util.Date;
+import java.util.List;
+
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class RutaResponse {
     private Integer rutaId;
     private String nombreRuta;
@@ -22,33 +28,6 @@ public class RutaResponse {
     private Date fechaPublicacion;
     private double distancia;
     private String tiempo;
+    private char tipoRuta;
     private List<ParadaResponse> paradas;
-
-    // Constructor reducido
-    public RutaResponse(
-            Integer rutaId,
-            String nombreRuta,
-            int numeroPasajeros,
-            int numeroParadas,
-            double costoGasolina,
-            String horario,
-            String puntoInicioNombre,
-            String puntoFinalNombre,
-            Date fechaPublicacion,
-            double distancia,
-            String tiempo,
-            List<ParadaResponse> paradas) {
-        this.rutaId = rutaId;
-        this.nombreRuta = nombreRuta;
-        this.numeroPasajeros = numeroPasajeros;
-        this.numeroParadas = numeroParadas;
-        this.costoGasolina = costoGasolina;
-        this.horario = horario;
-        this.puntoInicioNombre = puntoInicioNombre;
-        this.puntoFinalNombre = puntoFinalNombre;
-        this.fechaPublicacion = fechaPublicacion;
-        this.distancia = distancia;
-        this.tiempo = tiempo;
-        this.paradas = paradas;
-    }
 }
