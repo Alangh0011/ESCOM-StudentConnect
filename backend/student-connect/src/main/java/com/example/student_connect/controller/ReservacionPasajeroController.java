@@ -66,7 +66,7 @@ public class ReservacionPasajeroController {
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
-                            ruta.getFechaPublicacion(),
+                            ruta.getFechaProgramada(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),

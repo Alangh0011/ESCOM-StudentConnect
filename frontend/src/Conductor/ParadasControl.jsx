@@ -292,9 +292,8 @@ const handleCalcularDistanciaYCostos = async () => {
         const data = await response.json();
         console.log('Paradas guardadas exitosamente:', data);
         alert("¡Todas las paradas han sido registradas exitosamente!");
-
-       // Notificar al componente padre (Conductor) sobre el éxito
-        onSuccess("Paradas registradas exitosamente");
+        // Redirigir a la vista de rutas
+      history.push('/home');
     } catch (error) {
         console.error('Error al guardar las paradas:', error);
     }

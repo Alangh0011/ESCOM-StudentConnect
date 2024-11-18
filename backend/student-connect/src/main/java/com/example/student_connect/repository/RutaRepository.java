@@ -8,19 +8,40 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
 @Repository
 public interface RutaRepository extends JpaRepository<Ruta, Integer> {
 
-
-    // Consulta específica para pasajeros en el rango de fechas
     @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas " +
-            "WHERE r.fechaPublicacion BETWEEN :startDate AND :endDate")
+            "WHERE r.fechaProgramada BETWEEN :startDate AND :endDate")
     List<Ruta> findAllInFutureDateRangeForPassengers(
-            @Param("startDate") Date startDate,
-            @Param("endDate") Date endDate
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT DISTINCT r FROM Ruta r " +
+            "LEFT JOIN FETCH r.paradas " +
+            "WHERE r.conductor.id = :idConductor")
+    List<Ruta> findByConductorId(@Param("idConductor") Integer idConductor);
+
+    @Query("SELECT DISTINCT r FROM Ruta r " +
+            "LEFT JOIN FETCH r.paradas " +
+            "WHERE r.conductor.id = :idConductor " +
+            "AND r.fechaProgramada BETWEEN :startDate AND :endDate")
+    List<Ruta> findByConductorIdInFutureDateRange(
+            @Param("idConductor") Integer idConductor,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas " +
+            "WHERE r.fechaProgramada BETWEEN :startDate AND :endDate")
+    List<Ruta> findAllInFutureDateRange(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 
     @Query(value = "SELECT r FROM Ruta r WHERE r.conductor.id = :idConductor",
@@ -30,26 +51,32 @@ public interface RutaRepository extends JpaRepository<Ruta, Integer> {
             Pageable pageable
     );
 
-    @Query("SELECT DISTINCT r FROM Ruta r " +
-            "LEFT JOIN FETCH r.paradas " +
-            "WHERE r.conductor.id = :idConductor")
-    List<Ruta> findByConductorId(@Param("idConductor") Integer idConductor);
+    // Nuevo método para buscar por conductor, tipo y fecha
+    @Query("SELECT r FROM Ruta r WHERE r.conductor.id = :conductorId " +
+            "AND r.tipoRuta = :tipo " +
+            "AND r.fechaProgramada = :fecha")
+    List<Ruta> findByConductorIdAndTipoRutaAndFechaProgramada(
+            @Param("conductorId") Integer conductorId,
+            @Param("tipo") Character tipo,
+            @Param("fecha") LocalDate fecha);
 
-    // Otros métodos que ya tenías
-    @Query("SELECT DISTINCT r FROM Ruta r " +
-            "LEFT JOIN FETCH r.paradas " +
-            "WHERE r.conductor.id = :idConductor " +
-            "AND r.fechaPublicacion BETWEEN :startDate AND :endDate")
-    List<Ruta> findByConductorIdInFutureDateRange(
-            @Param("idConductor") Integer idConductor,
-            @Param("startDate") Date startDate,
-            @Param("endDate") Date endDate
+    @Query("SELECT r FROM Ruta r WHERE r.conductor.id = :conductorId " +
+            "AND DATE(r.fechaProgramada) = DATE(:fecha) " +
+            "AND r.estado = :estado")
+    List<Ruta> findByConductorIdAndFechaProgramadaAndEstado(
+            @Param("conductorId") Integer conductorId,
+            @Param("fecha") LocalDate fecha,
+            @Param("estado") String estado
     );
 
-    @Query("SELECT DISTINCT r FROM Ruta r LEFT JOIN FETCH r.paradas " +
-            "WHERE r.fechaPublicacion BETWEEN :startDate AND :endDate")
-    List<Ruta> findAllInFutureDateRange(
-            @Param("startDate") Date startDate,
-            @Param("endDate") Date endDate
+    @Query("SELECT r FROM Ruta r WHERE r.conductor.id = :conductorId " +
+            "AND r.fechaProgramada >= :fechaInicio " +
+            "AND r.fechaProgramada < :fechaFin " +
+            "AND r.estado = :estado")
+    List<Ruta> findByConductorIdAndFechaProgramadaBetweenAndEstado(
+            @Param("conductorId") Integer conductorId,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
+            @Param("estado") String estado
     );
 }

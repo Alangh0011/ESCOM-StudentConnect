@@ -83,4 +83,12 @@ public class UsuarioService {
     public void save(Usuario usuario) {
         usuarioRepository.save(usuario);
     }
+
+    // Método para obtener un pasajero por ID
+    public Pasajero obtenerPasajeroPorId(Integer pasajeroId) {
+        return usuarioRepository.findById(pasajeroId)
+                .filter(Pasajero.class::isInstance)
+                .map(Pasajero.class::cast)
+                .orElseThrow(() -> new IllegalArgumentException("El pasajero con ID " + pasajeroId + " no existe"));
+    }
 }

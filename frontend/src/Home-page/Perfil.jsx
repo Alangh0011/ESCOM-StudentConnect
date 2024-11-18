@@ -17,25 +17,26 @@ function Perfil({ userInfo, userRoles, onLogout }) {
 
     const calificacion = isNaN(parseFloat(userInfo.calificacion)) ? 0 : parseFloat(userInfo.calificacion).toFixed(2);
 
-    const renderCalificacion = (calificacion) => {
-        const maxRating = 5;
-        const filledIcons = Math.min(Math.floor(calificacion), maxRating);
-        const halfIcon = calificacion % 1 >= 0.5 ? 1 : 0;
-        const emptyIcons = maxRating - filledIcons - halfIcon;
+    // En el componente Perfil
+const renderCalificacion = (calificacion) => {
+    const maxRating = 5;
+    const filledIcons = Math.min(Math.floor(calificacion), maxRating);
+    const halfIcon = calificacion % 1 >= 0.5 ? 1 : 0;
+    const emptyIcons = maxRating - filledIcons - halfIcon;
 
-        return (
-            <div className="flex items-center space-x-1">
-                {[...Array(filledIcons)].map((_, i) => (
-                    <FaCarSide key={`filled-${i}`} className="text-yellow-400" />
-                ))}
-                {halfIcon === 1 && <FaCarSide className="text-yellow-400 opacity-50" />}
-                {[...Array(emptyIcons)].map((_, i) => (
-                    <FaCarSide key={`empty-${i}`} className="text-gray-300" />
-                ))}
-                <span className="ml-2 text-white/80">({calificacion})</span>
-            </div>
-        );
-    };
+    return (
+        <div className="flex items-center space-x-1">
+            {[...Array(filledIcons)].map((_, i) => (
+                <FaCarSide key={`filled-${i}`} className="text-yellow-400" />
+            ))}
+            {halfIcon === 1 && <FaCarSide className="text-yellow-400 opacity-50" />}
+            {[...Array(emptyIcons)].map((_, i) => (
+                <FaCarSide key={`empty-${i}`} className="text-gray-300" />
+            ))}
+            <span className="ml-2 text-white/80">({calificacion})</span>
+        </div>
+    );
+};
 
     return (
         <div className="bg-gradient-to-r from-blue-500 to-indigo-700 p-6 rounded-xl shadow-lg text-white">
@@ -66,19 +67,22 @@ function Perfil({ userInfo, userRoles, onLogout }) {
 
                 {/* Información del usuario */}
                 <div className="mt-6 lg:mt-0 lg:text-left">
-                    <p><span className="font-semibold">Boleta:</span> {userInfo.boleta}</p>
-                    <p><span className="font-semibold">Rol:</span> {userRoles.join(', ')}</p>
-                    <p><span className="font-semibold">Calificación:</span> {renderCalificacion(calificacion)}</p>
+                    <div className="mb-2"><span className="font-semibold">Boleta:</span> {userInfo.boleta}</div>
+                    <div className="mb-2"><span className="font-semibold">Rol:</span> {userRoles.join(', ')}</div>
+                    <div className="mb-2">
+                        <span className="font-semibold">Calificación: </span>
+                        {renderCalificacion(calificacion)}
+                    </div>
                 </div>
 
                 {/* Información del vehículo (si el usuario es conductor) */}
                 {userRoles.includes('ROLE_CONDUCTOR') && (
                     <div className="mt-6 lg:mt-0 lg:text-left">
-                        <h3 className="font-semibold">Detalles del Vehículo</h3>
-                        <p><span className="font-semibold">Placas:</span> {userInfo.placas}</p>
-                        <p><span className="font-semibold">Descripción:</span> {userInfo.descripcion}</p>
-                        <p><span className="font-semibold">Modelo:</span> {userInfo.modelo}</p>
-                        <p><span className="font-semibold">Color:</span> {userInfo.color}</p>
+                        <h3 className="font-semibold mb-2">Detalles del Vehículo</h3>
+                        <div className="mb-2"><span className="font-semibold">Placas:</span> {userInfo.placas}</div>
+                        <div className="mb-2"><span className="font-semibold">Descripción:</span> {userInfo.descripcion}</div>
+                        <div className="mb-2"><span className="font-semibold">Modelo:</span> {userInfo.modelo}</div>
+                        <div className="mb-2"><span className="font-semibold">Color:</span> {userInfo.color}</div>
                     </div>
                 )}
             </div>

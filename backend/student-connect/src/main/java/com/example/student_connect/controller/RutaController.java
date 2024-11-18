@@ -1,9 +1,6 @@
 package com.example.student_connect.controller;
 
-import com.example.student_connect.dto.ActualizarDistanciaRequest;
-import com.example.student_connect.dto.ParadaResponse;
-import com.example.student_connect.dto.RutaDetalleResponse;
-import com.example.student_connect.dto.RutaResponse;
+import com.example.student_connect.dto.*;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.Ruta;
 import com.example.student_connect.service.ParadaService;
@@ -21,9 +18,10 @@ import com.example.student_connect.security.service.UsuarioService;
 import com.example.student_connect.entity.ReservacionPasajero;
 import com.example.student_connect.service.ReservacionPasajeroService;
 import com.example.student_connect.security.entity.Pasajero;
-import com.example.student_connect.dto.PasajeroInfoResponse;
 
 import javax.transaction.Transactional;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,18 +53,36 @@ public class RutaController {
     @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> getRutasByConductorInNext7Days(@PathVariable("idConductor") Integer idConductor) {
         try {
+            // Obtener fecha actual y fecha límite (7 días después)
+            LocalDate fechaActual = LocalDate.now();
+            LocalDate fechaLimite = fechaActual.plusDays(7);
+
+            log.info("Buscando rutas para conductor {} entre {} y {}",
+                    idConductor, fechaActual, fechaLimite);
+
+            // Obtener rutas dentro del rango de fechas
             List<Ruta> rutas = rutaService.getRutasByConductorInNext7Days(idConductor);
+
+            // Filtrar rutas por fecha
+            rutas = rutas.stream()
+                    .filter(ruta -> {
+                        LocalDate fechaRuta = ruta.getFechaProgramada();
+                        return !fechaRuta.isBefore(fechaActual) && !fechaRuta.isAfter(fechaLimite);
+                    })
+                    .collect(Collectors.toList());
 
             // Obtener todas las reservaciones existentes
             List<ReservacionPasajero> reservaciones = reservacionPasajeroService.getAllReservaciones();
 
-            // Crear un mapa de paradaId -> ReservacionPasajero
+            // Crear mapa de paradaId -> ReservacionPasajero
             Map<Integer, ReservacionPasajero> reservacionesPorParada = reservaciones.stream()
                     .collect(Collectors.toMap(
                             r -> r.getParada().getParadaId(),
-                            r -> r
+                            r -> r,
+                            (r1, r2) -> r1 // En caso de duplicados, mantener el primero
                     ));
 
+            // Convertir a RutaResponse
             List<RutaResponse> rutaResponses = rutas.stream()
                     .map(ruta -> new RutaResponse(
                             ruta.getRutaId(),
@@ -77,16 +93,15 @@ public class RutaController {
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
-                            ruta.getFechaPublicacion(),
+                            ruta.getFechaProgramada(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),
                             ruta.getParadas().stream()
                                     .map(parada -> {
-                                        // Obtener la reservación si existe
-                                        ReservacionPasajero reservacion = reservacionesPorParada.get(parada.getParadaId());
+                                        ReservacionPasajero reservacion =
+                                                reservacionesPorParada.get(parada.getParadaId());
 
-                                        // Crear PasajeroInfoResponse solo si hay reservación con pasajero
                                         PasajeroInfoResponse pasajeroInfo = null;
                                         if (reservacion != null && reservacion.getPasajero() != null) {
                                             Pasajero pasajero = reservacion.getPasajero();
@@ -103,7 +118,7 @@ public class RutaController {
                                                 parada.getParadaNombre(),
                                                 parada.getCostoParada(),
                                                 parada.getDistanciaParada(),
-                                                reservacion != null, // ocupado solo si hay reservación
+                                                reservacion != null,
                                                 pasajeroInfo
                                         );
                                     })
@@ -112,7 +127,9 @@ public class RutaController {
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(rutaResponses, HttpStatus.OK);
+
         } catch (Exception e) {
+            log.error("Error al obtener rutas para conductor {}: {}", idConductor, e.getMessage());
             return new ResponseEntity<>(
                     new Mensaje("Error al obtener las rutas: " + e.getMessage()),
                     HttpStatus.INTERNAL_SERVER_ERROR
@@ -136,7 +153,7 @@ public class RutaController {
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
-                            ruta.getFechaPublicacion(),
+                            ruta.getFechaProgramada(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),
@@ -164,9 +181,13 @@ public class RutaController {
     @PreAuthorize("hasRole('CONDUCTOR')")
     public ResponseEntity<?> createRuta(@RequestBody Ruta ruta) {
         try {
+            // Establece el estado predeterminado si no se proporciona
+            if (ruta.getEstado() == null) {
+                ruta.setEstado("PENDIENTE");
+            }
+
             Ruta rutaGuardada = rutaService.saveRuta(ruta);
 
-            // Usar el constructor con todos los campos en RutaDetalleResponse
             RutaDetalleResponse respuesta = new RutaDetalleResponse(
                     rutaGuardada.getRutaId(),
                     rutaGuardada.getNombreRuta(),
@@ -181,20 +202,19 @@ public class RutaController {
                     rutaGuardada.getPuntoInicioLng(),
                     rutaGuardada.getPuntoFinalLat(),
                     rutaGuardada.getPuntoFinalLng(),
-                    rutaGuardada.getFechaPublicacion(),
+                    rutaGuardada.getFechaProgramada(), // Usar fechaProgramada en lugar de fechaPublicacion
                     rutaGuardada.getDistancia(),
                     rutaGuardada.getTiempo(),
+                    rutaGuardada.getEstado(), // Añadir estado aquí
                     new ArrayList<>()
             );
 
             return new ResponseEntity<>(respuesta, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(
-                    new Mensaje("Error al crear la ruta: " + e.getMessage()),
-                    HttpStatus.BAD_REQUEST
-            );
+            return new ResponseEntity<>(new Mensaje("Error al crear la ruta: " + e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
+
 
 
     @PostMapping("/{rutaId}/actualizarDistancia")
@@ -234,7 +254,7 @@ public class RutaController {
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
-                            ruta.getFechaPublicacion(),
+                            ruta.getFechaProgramada(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),
@@ -281,7 +301,7 @@ public class RutaController {
                             ruta.getHorario(),
                             ruta.getPuntoInicioNombre(),
                             ruta.getPuntoFinalNombre(),
-                            ruta.getFechaPublicacion(),
+                            ruta.getFechaProgramada(),
                             ruta.getDistancia(),
                             ruta.getTiempo(),
                             ruta.getTipoRuta(),
@@ -417,6 +437,7 @@ public class RutaController {
             return new ResponseEntity<>(new Mensaje("Error al eliminar la ruta"), HttpStatus.BAD_REQUEST);
         }
     }
+
 
 
 }

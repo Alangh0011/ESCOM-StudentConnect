@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -24,9 +25,10 @@ public class RutaDetalleResponse {
     private double puntoInicioLng;
     private double puntoFinalLat;
     private double puntoFinalLng;
-    private Date fechaPublicacion;
+    private LocalDate fechaProgramada;
     private double distancia;
     private String tiempo;
+    private String estado; // Nuevo campo
     private List<ParadaResponse> paradas;
 
     // Constructor completo
@@ -44,9 +46,10 @@ public class RutaDetalleResponse {
             double puntoInicioLng,
             double puntoFinalLat,
             double puntoFinalLng,
-            Date fechaPublicacion,
+            LocalDate fechaProgramada,
             double distancia,
             String tiempo,
+            String estado, // Nuevo campo
             List<ParadaResponse> paradas) {
         this.rutaId = rutaId;
         this.nombreRuta = nombreRuta;
@@ -61,9 +64,11 @@ public class RutaDetalleResponse {
         this.puntoInicioLng = puntoInicioLng;
         this.puntoFinalLat = puntoFinalLat;
         this.puntoFinalLng = puntoFinalLng;
-        this.fechaPublicacion = fechaPublicacion;
+        this.fechaProgramada = fechaProgramada;
         this.distancia = distancia;
         this.tiempo = tiempo;
+        this.estado = estado; // Asigna el estado aquí
         this.paradas = paradas;
     }
 }
+

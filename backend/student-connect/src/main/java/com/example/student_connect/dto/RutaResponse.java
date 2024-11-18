@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -17,17 +18,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RutaResponse {
-    private Integer rutaId;
-    private String nombreRuta;
-    private int numeroPasajeros;
-    private int numeroParadas;
-    private double costoGasolina;
-    private String horario;
-    private String puntoInicioNombre;
-    private String puntoFinalNombre;
-    private Date fechaPublicacion;
-    private double distancia;
-    private String tiempo;
-    private char tipoRuta;
-    private List<ParadaResponse> paradas;
+    Integer rutaId;
+    String nombreRuta;
+    int numeroPasajeros;
+    int numeroParadas;
+    double costoGasolina;
+    String horario;
+    String puntoInicioNombre;
+    String puntoFinalNombre;
+    LocalDate fechaProgramada;
+    double distancia;
+    String tiempo;
+    char tipoRuta;
+    List<ParadaResponse> paradas;
 }

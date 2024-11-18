@@ -1,40 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Ruta from './Ruta';
 import VerRutas from './VerRutas';
+import ViajeActivo from './Viaje/ViajeActivo';
+
+const Alert = ({ message, type }) => (
+    <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-100 text-green-800 border-green-400' :
+        type === 'error' ? 'bg-red-100 text-red-800 border-red-400' :
+        'bg-blue-100 text-blue-800 border-blue-400'
+    } border`}>
+        <p>{message}</p>
+    </div>
+);
 
 const Conductor = ({ userId }) => {
-    const [selectedOption, setSelectedOption] = useState('verRutas'); // Cambiado para mostrar las rutas por defecto
+    const [selectedOption, setSelectedOption] = useState('verRutas');
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
-    const [alertType, setAlertType] = useState(''); // 'success' o 'error'
+    const [alertType, setAlertType] = useState('');
+    const [viajeEnCurso, setViajeEnCurso] = useState(false);
 
-    // Función para mostrar alertas
     const showNotification = (message, type = 'success') => {
         setAlertMessage(message);
         setAlertType(type);
         setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 5000); // La alerta desaparece después de 5 segundos
+        setTimeout(() => setShowAlert(false), 5000);
     };
 
     const handleOptionSelect = (option) => {
+        if (viajeEnCurso && option !== 'viajeActivo') {
+            showNotification('Tienes un viaje en curso. Finalízalo antes de cambiar de sección.', 'error');
+            return;
+        }
         setSelectedOption(option);
+    };
+
+    const handleViajeStart = () => {
+        setViajeEnCurso(true);
+        showNotification('Viaje iniciado correctamente', 'success');
+    };
+
+    const handleViajeEnd = () => {
+        setViajeEnCurso(false);
+        showNotification('Viaje finalizado correctamente', 'success');
     };
 
     const handleRutaSuccess = (message) => {
         showNotification(message, 'success');
-        setSelectedOption('verRutas'); // Cambia la vista a 'verRutas' tras éxito en ParadasControl
+        setSelectedOption('verRutas');
     };
-    // Componente de Alerta
-    const Alert = ({ message, type }) => (
-        <div
-            className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-500 ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            } text-white`}
-            style={{ zIndex: 1000 }}
-        >
-            {message}
-        </div>
-    );
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -50,12 +64,29 @@ const Conductor = ({ userId }) => {
                     
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                         <button
+                            onClick={() => handleOptionSelect('viajeActivo')}
+                            className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                                selectedOption === 'viajeActivo'
+                                    ? 'bg-green-600 text-white shadow-lg transform scale-105'
+                                    : 'bg-white text-green-600 border-2 border-green-600 hover:bg-green-50'
+                            } ${viajeEnCurso ? 'animate-pulse' : ''}`}
+                        >
+                            <span className="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                {viajeEnCurso ? 'Viaje en Curso' : 'Viaje Activo'}
+                            </span>
+                        </button>
+
+                        <button
                             onClick={() => handleOptionSelect('registrarRuta')}
                             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
                                 selectedOption === 'registrarRuta'
                                     ? 'bg-blue-600 text-white shadow-lg transform scale-105'
                                     : 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50'
                             }`}
+                            disabled={viajeEnCurso}
                         >
                             <span className="flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,9 +100,10 @@ const Conductor = ({ userId }) => {
                             onClick={() => handleOptionSelect('verRutas')}
                             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
                                 selectedOption === 'verRutas'
-                                    ? 'bg-green-600 text-white shadow-lg transform scale-105'
-                                    : 'bg-white text-green-600 border-2 border-green-600 hover:bg-green-50'
+                                    ? 'bg-yellow-600 text-white shadow-lg transform scale-105'
+                                    : 'bg-white text-yellow-600 border-2 border-yellow-600 hover:bg-yellow-50'
                             }`}
+                            disabled={viajeEnCurso}
                         >
                             <span className="flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,10 +116,19 @@ const Conductor = ({ userId }) => {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300">
+                    {selectedOption === 'viajeActivo' && (
+                        <ViajeActivo 
+                            userId={userId}
+                            onViajeStart={handleViajeStart}
+                            onViajeEnd={handleViajeEnd}
+                            onSuccess={(message) => showNotification(message, 'success')}
+                            onError={(message) => showNotification(message, 'error')}
+                        />
+                    )}
                     {selectedOption === 'registrarRuta' && (
                         <Ruta 
                             userId={userId} 
-                            onSuccess={handleRutaSuccess} // Usar handleRutaSuccess para redireccionar
+                            onSuccess={handleRutaSuccess}
                             onError={(message) => showNotification(message, 'error')}
                         />
                     )}

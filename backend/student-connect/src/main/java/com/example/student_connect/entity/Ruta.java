@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,10 +30,6 @@ public class Ruta {
     @NotBlank
     @Column(name = "nombre_ruta")
     private String nombreRuta; // Nombre de la ruta
-
-    @NotBlank
-    @Column(name = "fecha_publicacion")
-    private Date fechaPublicacion;
 
     @Column(name = "numero_pasajeros")
     private int numeroPasajeros;
@@ -73,6 +70,12 @@ public class Ruta {
 
     @Column(name = "distancia")
     private double distancia; // distancia aproximado de la ruta
+
+    @Column(name = "fecha_programada", nullable = false)
+    private LocalDate fechaProgramada; // Fecha en la que la ruta está programada
+
+    @Column(name = "estado", nullable = false)
+    private String estado = "PENDIENTE"; // PENDIENTE, EN_CURSO, FINALIZADO
 
     @OneToMany(mappedBy = "ruta",
             cascade = CascadeType.ALL,

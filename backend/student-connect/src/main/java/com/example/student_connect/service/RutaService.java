@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import com.example.student_connect.repository.ParadaRepository;
 
 import org.springframework.transaction.annotation.Transactional; // Cambiar esta importación
+
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,53 +32,37 @@ public class RutaService {
         this.rutaRepository = rutaRepository;
     }
 
-
-    // Método específico para pasajeros
-    public List<Ruta> getAllRutasInNext7DaysForPassengers() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        Date startDate = calendar.getTime();
-
-        calendar.add(Calendar.DAY_OF_YEAR, 7);
-        Date endDate = calendar.getTime();
-
-        log.info("Consultando rutas para pasajeros en el rango: {} - {}", startDate, endDate);
-        return rutaRepository.findAllInFutureDateRangeForPassengers(startDate, endDate);
+    public Ruta obtenerRutaPorId(Integer rutaId) {
+        return rutaRepository.findById(rutaId)
+                .orElseThrow(() -> new RuntimeException("Ruta no encontrada con ID: " + rutaId));
     }
 
     public List<Ruta> getRutasByConductorInNext7Days(Integer idConductor) {
-        // Configurar startDate al inicio del día
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        Date startDate = calendar.getTime(); // Fecha actual ajustada al inicio del día
+        LocalDate fechaActual = LocalDate.now();
+        LocalDate fechaLimite = fechaActual.plusDays(7);
 
-        // Configurar endDate a 7 días después, al final del día
-        calendar.add(Calendar.DAY_OF_YEAR, 7);
-        Date endDate = calendar.getTime();
+        log.info("Consultando rutas para conductor {} entre {} y {}",
+                idConductor, fechaActual, fechaLimite);
 
-        // Log para verificar las fechas de inicio y fin
-        log.info("Rango de fechas para la consulta: {} - {}", startDate, endDate);
+        return rutaRepository.findByConductorIdInFutureDateRange(idConductor, fechaActual, fechaLimite);
+    }
 
-        return rutaRepository.findByConductorIdInFutureDateRange(idConductor, startDate, endDate);
+    public List<Ruta> getAllRutasInNext7DaysForPassengers() {
+        LocalDate fechaActual = LocalDate.now();
+        LocalDate fechaLimite = fechaActual.plusDays(7);
+
+        log.info("Consultando rutas para pasajeros entre {} y {}",
+                fechaActual, fechaLimite);
+
+        return rutaRepository.findAllInFutureDateRangeForPassengers(fechaActual, fechaLimite);
     }
 
 
-
-
     public List<Ruta> getAllRutasInNext7Days() {
-        Date startDate = new Date(); // Fecha actual (hoy)
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startDate);
-        calendar.add(Calendar.DAY_OF_YEAR, 7); // Sumar 7 días a la fecha actual
-        Date endDate = calendar.getTime(); // Fecha 7 días después
+        LocalDate fechaActual = LocalDate.now();
+        LocalDate fechaLimite = fechaActual.plusDays(7);
 
-        return rutaRepository.findAllInFutureDateRange(startDate, endDate);
+        return rutaRepository.findAllInFutureDateRange(fechaActual, fechaLimite);
     }
 
     @Transactional(readOnly = true)
@@ -201,5 +188,23 @@ public class RutaService {
         }
     }
 
+    public List<Ruta> getRutasByConductorAndTipoAndFecha(Integer idConductor, Character tipo, LocalDate fecha) {
+        return rutaRepository.findByConductorIdAndTipoRutaAndFechaProgramada(idConductor, tipo, fecha);
+    }
 
+    public List<Ruta> getRutasByConductorAndFecha(Integer conductorId, LocalDate fecha) {
+        log.info("Buscando rutas para conductor {} en fecha {}. Zona horaria del sistema: {}",
+                conductorId, fecha, ZoneId.systemDefault());
+
+        // Asegurarnos de que estamos comparando las fechas correctamente
+        LocalDate inicioDelDia = fecha;
+        LocalDate finDelDia = fecha.plusDays(1);
+
+        return rutaRepository.findByConductorIdAndFechaProgramadaBetweenAndEstado(
+                conductorId,
+                inicioDelDia,
+                finDelDia,
+                "PENDIENTE"
+        );
+    }
 }
