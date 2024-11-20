@@ -4,11 +4,15 @@ import com.example.student_connect.dto.*;
 import com.example.student_connect.entity.Parada;
 import com.example.student_connect.entity.ReservacionPasajero;
 import com.example.student_connect.entity.Ruta;
+import com.example.student_connect.entity.Viaje;
+import com.example.student_connect.enums.EstadoViaje;
 import com.example.student_connect.security.entity.Pasajero;
 import com.example.student_connect.service.ParadaService;
 import com.example.student_connect.service.ReservacionPasajeroService;
 import com.example.student_connect.service.RutaService;
 import com.example.student_connect.security.service.UsuarioService;
+import com.example.student_connect.service.ViajeService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +24,14 @@ import com.example.student_connect.security.utils.Mensaje;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/reservaciones")
 public class ReservacionPasajeroController {
 
@@ -40,6 +46,9 @@ public class ReservacionPasajeroController {
 
     @Autowired
     private ParadaService paradaService;
+
+    @Autowired
+    private ViajeService viajeService;
 
 
     @GetMapping("/proximos-7-dias")
@@ -97,63 +106,67 @@ public class ReservacionPasajeroController {
     @PostMapping("/crear")
     public ResponseEntity<?> crearReservacion(@RequestBody ReservacionRequest request) {
         try {
-            // Obtención de entidades
-            Pasajero pasajero = (Pasajero) usuarioService.getById(request.getPasajeroId().intValue())
+            // Validaciones básicas
+            Pasajero pasajero = (Pasajero) usuarioService.getById(request.getPasajeroId())
                     .orElseThrow(() -> new IllegalArgumentException("El pasajero no existe."));
-            Ruta ruta = rutaService.getRutaById(request.getRutaId().intValue())
+
+            Ruta ruta = rutaService.getRutaById(request.getRutaId())
                     .orElseThrow(() -> new IllegalArgumentException("La ruta no existe."));
-            Parada parada = paradaService.getById(request.getParadaId().intValue())
-                    .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));
 
-            // Verificar si la parada ya está reservada (usando las reservaciones existentes)
-            Optional<ReservacionPasajero> reservacionExistente = reservacionPasajeroService.findByParada(parada);
-            if (reservacionExistente.isPresent()) {
-                return new ResponseEntity<>(new Mensaje("La parada ya está reservada"), HttpStatus.BAD_REQUEST);
-            }
+            // Obtener el inicio y fin del día de la fecha programada de la ruta
+            LocalDateTime startOfDay = ruta.getFechaProgramada().atStartOfDay();
+            LocalDateTime endOfDay = ruta.getFechaProgramada().atTime(LocalTime.MAX);
 
-            // Convertir el tipo de ruta de String a char
+            // Buscar reservaciones para la fecha específica de la ruta
+            List<ReservacionPasajero> reservacionesDia = reservacionPasajeroService
+                    .findByPasajeroAndFechaBetween(pasajero.getId(), startOfDay, endOfDay);
+
             char tipoRutaRequest = request.getTipoRuta().charAt(0);
+
+            // Contar reservaciones por tipo para ese día específico
+            long reservacionesC = reservacionesDia.stream()
+                    .filter(r -> r.getTipoRuta() == 'C')
+                    .count();
+            long reservacionesE = reservacionesDia.stream()
+                    .filter(r -> r.getTipoRuta() == 'E')
+                    .count();
+
+            // Validar límite por tipo para la fecha específica
+            if (tipoRutaRequest == 'C' && reservacionesC >= 1) {
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("Ya tienes una reserva tipo C (Casa→Escuela) para el día " +
+                                ruta.getFechaProgramada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+            }
+            if (tipoRutaRequest == 'E' && reservacionesE >= 1) {
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("Ya tienes una reserva tipo E (Escuela→Casa) para el día " +
+                                ruta.getFechaProgramada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+            }
 
             // Validar que el tipo de ruta coincida
             if (tipoRutaRequest != ruta.getTipoRuta()) {
-                return new ResponseEntity<>(
-                        new Mensaje("El tipo de ruta solicitado '" + tipoRutaRequest +
-                                "' no coincide con el tipo de la ruta '" + ruta.getTipoRuta() + "'"),
-                        HttpStatus.BAD_REQUEST
-                );
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("El tipo de ruta solicitado '" + tipoRutaRequest +
+                                "' no coincide con el tipo de la ruta '" + ruta.getTipoRuta() + "'"));
             }
 
-            // Verificar si el usuario ya tiene una reserva del mismo tipo hoy
-            LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
-            LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
+            // Verificar si la parada existe y está disponible
+            Parada parada = paradaService.getById(request.getParadaId())
+                    .orElseThrow(() -> new IllegalArgumentException("La parada no existe."));
 
-            List<ReservacionPasajero> reservacionesHoy = reservacionPasajeroService
-                    .findByPasajeroAndTipoRutaAndFechaBetween(
-                            pasajero.getId(),
-                            tipoRutaRequest,
-                            startOfDay,
-                            endOfDay
-                    );
-
-            if (!reservacionesHoy.isEmpty()) {
-                return new ResponseEntity<>(
-                        new Mensaje("Ya tienes una reserva del tipo " + tipoRutaRequest + " para hoy"),
-                        HttpStatus.BAD_REQUEST
-                );
+            Optional<ReservacionPasajero> reservacionExistente = reservacionPasajeroService.findByParada(parada);
+            if (reservacionExistente.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("La parada ya está reservada"));
             }
 
-            // Verificar si no excede el número de paradas disponibles
+            // Verificar límite de pasajeros
             if (ruta.getNumeroPasajeros() >= ruta.getNumeroParadas()) {
-                return new ResponseEntity<>(
-                        new Mensaje("La ruta ha alcanzado su límite de pasajeros"),
-                        HttpStatus.BAD_REQUEST
-                );
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("La ruta ha alcanzado su límite de pasajeros"));
             }
 
-            // Incrementar el número de pasajeros de la ruta
-            ruta.setNumeroPasajeros(ruta.getNumeroPasajeros() + 1);
-
-            // Crear y guardar la reservación usando el char convertido
+            // Crear la reservación
             ReservacionPasajero nuevaReservacion = reservacionPasajeroService.crearReservacion(
                     pasajero,
                     ruta,
@@ -161,20 +174,110 @@ public class ReservacionPasajeroController {
                     tipoRutaRequest
             );
 
-            // Actualizar el estado de ocupación de todas las paradas basado en las reservaciones actuales
+            // Actualizar estado de paradas
             paradaService.sincronizarEstadoOcupacion();
 
-            return new ResponseEntity<>(
-                    new Mensaje("Reserva creada correctamente"),
-                    HttpStatus.CREATED
-            );
+            return ResponseEntity.ok(new Mensaje("Reserva creada correctamente para el día " +
+                    ruta.getFechaProgramada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
 
         } catch (Exception e) {
-            return new ResponseEntity<>(
-                    new Mensaje("Error al crear la reserva: " + e.getMessage()),
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
+            log.error("Error al crear reservación:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Mensaje("Error al crear la reserva: " + e.getMessage()));
         }
     }
 
+    @GetMapping("/viaje-activo/{pasajeroId}")
+    public ResponseEntity<?> getViajeActivoPasajero(@PathVariable Integer pasajeroId) {
+        try {
+            log.info("Buscando viaje activo para pasajero ID: {}", pasajeroId);
+
+            ReservacionPasajero reservacion = reservacionPasajeroService
+                    .findLatestByPasajeroId(pasajeroId);
+
+            if (reservacion == null) {
+                log.info("No se encontró reservación para el pasajero ID: {}", pasajeroId);
+                return ResponseEntity.ok(null);
+            }
+
+            log.info("Reservación encontrada: {}", reservacion.getIdReservacion());
+
+            Viaje viajeActivo = viajeService
+                    .findByRutaIdAndEstado(reservacion.getRuta().getRutaId(), EstadoViaje.EN_CURSO);
+
+            if (viajeActivo == null) {
+                log.info("No se encontró viaje EN_CURSO para la ruta ID: {}",
+                        reservacion.getRuta().getRutaId());
+                return ResponseEntity.ok(null);
+            }
+
+            log.info("Viaje activo encontrado: {}", viajeActivo.getId());
+
+            // Aquí actualizamos la creación del response con todos los campos
+            ViajeActivoResponse response = new ViajeActivoResponse(
+                    viajeActivo.getId(),
+                    viajeActivo.getRuta().getRutaId(),
+                    viajeActivo.getRuta().getNombreRuta(),
+                    viajeActivo.getEstado().toString(),
+                    viajeActivo.getConductor().getNombre(),
+                    viajeActivo.getConductor().getCalificacion(),
+                    reservacion.getParada().getParadaNombre(),
+                    viajeActivo.getRuta().getPuntoInicioLat(),
+                    viajeActivo.getRuta().getPuntoInicioLng(),
+                    viajeActivo.getRuta().getPuntoFinalLat(),
+                    viajeActivo.getRuta().getPuntoFinalLng(),
+                    viajeActivo.getFechaInicio(),
+                    viajeActivo.getFechaFin(),
+                    reservacion.getParada().getDistanciaParada(),
+                    reservacion.getParada().getCostoParada(),
+                    false // Por defecto no está calificado
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error al obtener viaje activo para pasajero ID {}: {}",
+                    pasajeroId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Mensaje("Error al obtener viaje activo: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/historial/{pasajeroId}")
+    public ResponseEntity<?> getHistorialReservaciones(@PathVariable Integer pasajeroId) {
+        try {
+            log.info("Obteniendo historial de reservaciones para pasajero ID: {}", pasajeroId);
+
+            List<ReservacionPasajero> reservaciones = reservacionPasajeroService
+                    .findAllByPasajeroId(pasajeroId);
+
+            List<ReservacionHistorialResponse> response = reservaciones.stream()
+                    .map(reservacion -> {
+                        Viaje viaje = viajeService
+                                .findByRutaId(reservacion.getRuta().getRutaId());
+
+                        return new ReservacionHistorialResponse(
+                                reservacion.getIdReservacion(),
+                                reservacion.getRuta().getNombreRuta(),
+                                reservacion.getParada().getParadaNombre(),
+                                reservacion.getFechaReservacion(),
+                                reservacion.getTipoRuta(),
+                                viaje != null ? viaje.getEstado().toString() : "PENDIENTE",
+                                viaje != null ? viaje.getFechaInicio() : null,
+                                viaje != null ? viaje.getFechaFin() : null,
+                                viaje != null ? viaje.getConductor().getNombre() : "Sin asignar",
+                                viaje != null ? viaje.getConductor().getCalificacion() : 0.0,
+                                reservacion.getParada().getCostoParada(), // Costo de la parada
+                                false // Por defecto no está calificado
+                        );
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error al obtener historial: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Mensaje("Error al obtener historial: " + e.getMessage()));
+        }
+    }
 }

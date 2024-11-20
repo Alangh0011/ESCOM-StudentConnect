@@ -137,36 +137,6 @@ export const finalizarViaje = async (viajeId) => {
     }
 };
 
-// Nuevos servicios de Ubicación
-export const actualizarUbicacion = async (ubicacionConductorId, ubicacion) => {
-    try {
-        if (!ubicacionConductorId) {
-            throw new Error('ID de ubicación del conductor no proporcionado');
-        }
-
-        const response = await api.post(`/ubicacion/actualizar/${ubicacionConductorId}`, {
-            lat: ubicacion.lat,
-            lng: ubicacion.lng,
-            timestamp: new Date().toISOString(),
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error al actualizar ubicación:', error);
-        throw error;
-    }
-};
-
-
-export const obtenerUltimaUbicacion = async (viajeId) => {
-    try {
-        const response = await api.get(`/ubicacion/ultima/${viajeId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error al obtener última ubicación:', error);
-        throw error;
-    }
-};
-
 // Función para manejar errores WebSocket
 export const handleWebSocketError = (error) => {
     console.error('Error WebSocket:', error);
@@ -215,9 +185,12 @@ export const obtenerCalificacionesViaje = async (viajeId) => {
 
 /********************************************************************************** */
 
+// En rutaAPI.js, modificar la función obtenerDetallesViaje
 export const obtenerDetallesViaje = async (viajeId) => {
     try {
-        const response = await api.get(`/api/viajes/${viajeId}`);
+        console.log('Obteniendo detalles del viaje:', viajeId);
+        const response = await api.get(`/reservaciones/viaje-activo/${viajeId}`);
+        console.log('Respuesta detalles viaje:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error al obtener detalles del viaje:', error);
@@ -225,12 +198,126 @@ export const obtenerDetallesViaje = async (viajeId) => {
     }
 };
 
+
+
+
 export const calificarConductor = async (calificacionData) => {
     try {
-        const response = await api.post('/api/calificaciones/pasajero/calificar-conductor', calificacionData);
+        console.log('Enviando calificación al conductor:', calificacionData);
+        const response = await api.post('/calificaciones/pasajero/calificar-conductor', {
+            viajeId: calificacionData.viajeId,
+            pasajeroId: calificacionData.pasajeroId,
+            calificacion: calificacionData.calificacion,
+            comentario: calificacionData.comentario || ''
+        });
         return response.data;
     } catch (error) {
         console.error('Error al calificar conductor:', error);
         throw error;
     }
 };
+
+export const obtenerViajeActivo = async (pasajeroId) => {
+    try {
+        console.log('Solicitando viaje activo para pasajero:', pasajeroId);
+        const response = await api.get(`/reservaciones/viaje-activo/${pasajeroId}`);
+        
+        if (!response.data) return null;
+
+        // Asegurarse de que el estado se procese correctamente
+        const viajeData = {
+            ...response.data,
+            estado: response.data.estado || 'EN_CURSO',
+            calificado: response.data.calificado || false
+        };
+
+        console.log('Datos del viaje activo:', viajeData);
+        return viajeData;
+    } catch (error) {
+        console.error('Error al obtener viaje activo:', error);
+        return null;
+    }
+};
+
+export const actualizarUbicacion = async (viajeId, ubicacion) => {
+    try {
+        const response = await api.post(`/ubicacion/actualizar/${viajeId}`, ubicacion);
+        return response.data;
+    } catch (error) {
+        console.error('Error al actualizar ubicación:', error);
+        throw new Error(
+            error.response?.data?.mensaje || 
+            'Error al actualizar la ubicación'
+        );
+    }
+};
+
+export const obtenerUltimaUbicacion = async (viajeId) => {
+    try {
+        const response = await api.get(`/ubicacion/ultima/${viajeId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener última ubicación:', error);
+        // Si es 404, no hay ubicación registrada aún
+        if (error.response?.status === 404) {
+            return null;
+        }
+        throw new Error(
+            error.response?.data?.mensaje || 
+            'Error al obtener la última ubicación'
+        );
+    }
+};
+
+export const crearReservacion = async (reservacionData) => {
+    try {
+        const response = await api.post('/reservaciones/crear', {
+            pasajeroId: reservacionData.pasajeroId,
+            rutaId: reservacionData.rutaId,
+            paradaId: reservacionData.paradaId,
+            tipoRuta: reservacionData.tipoRuta
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error al crear reservación:', error);
+        throw new Error(error.response?.data?.mensaje || 'Error al crear la reservación');
+    }
+};
+
+export const obtenerRutasDisponibles = async () => {
+    try {
+        const response = await api.get('/reservaciones/proximos-7-dias');
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener rutas disponibles:', error);
+        throw error;
+    }
+};
+
+export const verificarEstadoViaje = async (viaje, userId, onViajeUpdate, setMostrarCalificacion) => {
+    if (!viaje?.viajeId) return false;
+
+    try {
+        // Obtener el estado del viaje desde el endpoint de viaje activo
+        const viajeActualizado = await obtenerViajeActivo(userId);
+        console.log('Estado actual del viaje:', viajeActualizado?.estado);
+
+        if (viajeActualizado?.estado === 'FINALIZADO' && !viaje.calificado) {
+            console.log('El viaje ha finalizado y requiere calificación');
+            if (onViajeUpdate) {
+                onViajeUpdate({
+                    ...viaje,
+                    estado: 'FINALIZADO',
+                });
+            }
+            setMostrarCalificacion(true);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error al verificar estado del viaje:', error);
+        return false;
+    }
+};
+
+

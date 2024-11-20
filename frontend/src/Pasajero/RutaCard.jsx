@@ -1,14 +1,25 @@
-import React from 'react';
-import { MapPin, Users, Clock, Car } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Users, Clock, Car, AlertCircle } from 'lucide-react';
+import { formatearFechaLocal } from '../utils/dateUtils';
 
 const RutaCard = ({ ruta, onReservar, disabled = false }) => {
+    const [mostrarTodasParadas, setMostrarTodasParadas] = useState(false);
+    const paradasDisponibles = ruta.paradas?.filter(p => !p.ocupado).length || 0;
+    const totalParadas = ruta.paradas?.length || 0;
+    const fechaFormateada = formatearFechaLocal(ruta.fechaProgramada);
+
     return (
         <div className={`bg-white rounded-lg shadow-md p-6 ${disabled ? 'opacity-60' : ''}`}>
             <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-semibold text-gray-800">{ruta.nombreRuta}</h3>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {ruta.tipoRuta === 'E' ? 'Escuela → Casa' : 'Casa → Escuela'}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                        {ruta.tipoRuta === 'E' ? 'Escuela → Casa' : 'Casa → Escuela'}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                        {paradasDisponibles} de {totalParadas} paradas disponibles
+                    </span>
+                </div>
             </div>
 
             <div className="space-y-3 mb-4">
@@ -32,7 +43,7 @@ const RutaCard = ({ ruta, onReservar, disabled = false }) => {
                     <Clock className="w-5 h-5 text-gray-500" />
                     <div>
                         <p className="text-gray-700">
-                            {new Date(ruta.fechaProgramada).toLocaleString()}
+                            {fechaFormateada} {ruta.horario}
                         </p>
                     </div>
                 </div>
@@ -40,34 +51,59 @@ const RutaCard = ({ ruta, onReservar, disabled = false }) => {
                 <div className="flex items-center space-x-3">
                     <Users className="w-5 h-5 text-gray-500" />
                     <p className="text-gray-700">
-                        {ruta.numeroPasajeros || 0}/{ruta.numeroParadas || 0} pasajeros
+                        {ruta.numeroPasajeros}/{ruta.numeroParadas} pasajeros
                     </p>
                 </div>
             </div>
 
             {ruta.paradas && ruta.paradas.length > 0 && (
                 <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Paradas disponibles:</h4>
-                    <div className="grid gap-2">
-                        {ruta.paradas.filter(p => !p.ocupado).map((parada) => (
-                            <button
-                                key={parada.paradaId}
-                                onClick={() => !disabled && onReservar(ruta, parada)}
-                                disabled={disabled || parada.ocupado}
-                                className={`w-full px-4 py-2 text-left rounded-lg border
-                                    ${disabled || parada.ocupado 
-                                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
-                                        : 'hover:bg-blue-50 hover:border-blue-300 border-gray-200'
+                    <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-medium text-gray-700">Paradas:</h4>
+                        <button
+                            onClick={() => setMostrarTodasParadas(!mostrarTodasParadas)}
+                            className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                            {mostrarTodasParadas ? 'Mostrar disponibles' : 'Mostrar todas'}
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {ruta.paradas
+                            .filter(p => mostrarTodasParadas ? true : !p.ocupado)
+                            .map((parada) => (
+                                <div
+                                    key={parada.paradaId}
+                                    className={`p-3 rounded-lg border ${
+                                        parada.ocupado 
+                                            ? 'bg-gray-50 border-gray-200'
+                                            : 'border-blue-100 hover:border-blue-300'
                                     }`}
-                            >
-                                <div className="flex justify-between items-center">
-                                    <span>{parada.paradaNombre}</span>
-                                    <span className="text-sm text-gray-500">
-                                        ${parada.costoParada}
-                                    </span>
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center space-x-2">
+                                            <span className={`w-2 h-2 rounded-full ${
+                                                parada.ocupado ? 'bg-red-500' : 'bg-green-500'
+                                            }`} />
+                                            <span className="text-sm">
+                                                {parada.paradaNombre}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-sm text-gray-500">
+                                                ${parada.costoParada}
+                                            </span>
+                                            {!parada.ocupado && !disabled && (
+                                                <button
+                                                    onClick={() => onReservar(ruta, parada)}
+                                                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                                >
+                                                    Reservar
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </button>
-                        ))}
+                            ))}
                     </div>
                 </div>
             )}
@@ -75,7 +111,7 @@ const RutaCard = ({ ruta, onReservar, disabled = false }) => {
             {disabled && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-700 flex items-center">
-                        <Car className="w-4 h-4 mr-2" />
+                        <AlertCircle className="w-4 h-4 mr-2" />
                         No puedes reservar mientras tengas un viaje activo
                     </p>
                 </div>

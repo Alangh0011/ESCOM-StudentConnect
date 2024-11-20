@@ -1,113 +1,248 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, Marker, DirectionsRenderer } from '@react-google-maps/api';
-import { MapPin, Navigation } from 'lucide-react';
-import CalificacionModal  from './CalificacionModal.jsx';
-import { 
-    obtenerUltimaUbicacion, 
-    obtenerDetallesViaje,
-    calificarConductor 
-} from '../../utils/rutaAPI';
+import { Map, Navigation, Star, User, Clock } from 'lucide-react';
+import { useGoogleMaps } from '../../GoogleMapsContext';
+import CalificacionModal from './CalificacionModal';
 import { toast } from 'react-toastify';
+import { obtenerUltimaUbicacion, calificarConductor, obtenerViajeActivo, obtenerDetallesViaje  } from '../../utils/rutaAPI';
 
-const SeguimientoViaje = ({ userId, viajeId }) => {
-    const [viaje, setViaje] = useState(null);
+
+const mapContainerStyle = {
+    width: '100%',
+    height: '400px',
+    borderRadius: '0.5rem'
+};
+
+// Coordenadas por defecto (ESCOM)
+const DEFAULT_CENTER = {
+    lat: 19.504394764401038,
+    lng: -99.14698680254465
+};
+
+const POLLING_INTERVAL = 5000; // 5 segundos
+
+const SeguimientoViaje = ({ userId, viaje, onViajeUpdate }) => {
     const [ubicacionConductor, setUbicacionConductor] = useState(null);
-    const [ruta, setRuta] = useState(null);
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [mostrarCalificacion, setMostrarCalificacion] = useState(false);
+    const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
+    const [directions, setDirections] = useState(null);
+    const { isLoaded } = useGoogleMaps();
 
-    // Obtener datos iniciales del viaje
-    useEffect(() => {
-        const cargarDetallesViaje = async () => {
-            try {
-                const detallesViaje = await obtenerDetallesViaje(viajeId);
-                setViaje(detallesViaje);
-                
-                // Configurar ruta en el mapa
-                if (detallesViaje.puntoInicioLat && detallesViaje.puntoFinalLat) {
-                    const directionsService = new window.google.maps.DirectionsService();
-                    const result = await directionsService.route({
-                        origin: { 
-                            lat: parseFloat(detallesViaje.puntoInicioLat), 
-                            lng: parseFloat(detallesViaje.puntoInicioLng) 
-                        },
-                        destination: { 
-                            lat: parseFloat(detallesViaje.puntoFinalLat), 
-                            lng: parseFloat(detallesViaje.puntoFinalLng) 
-                        },
-                        travelMode: window.google.maps.TravelMode.DRIVING,
+    const verificarEstadoViaje = useCallback(async () => {
+        try {
+            const detallesViaje = await obtenerDetallesViaje(viaje.viajeId);
+            console.log('Estado actual del viaje:', detallesViaje.estado);
+
+            // Si el estado cambió a FINALIZADO y no está calificado
+            if (detallesViaje.estado === 'FINALIZADO' && !detallesViaje.calificado) {
+                if (onViajeUpdate) {
+                    onViajeUpdate({
+                        ...viaje,
+                        estado: 'FINALIZADO'
                     });
-                    setRuta(result);
+                }
+                setMostrarCalificacion(true);
+                return true; // El viaje ha finalizado
+            }
+            return false; // El viaje aún está en curso
+        } catch (error) {
+            console.error('Error al verificar estado del viaje:', error);
+            return false;
+        }
+    }, [viaje, onViajeUpdate]);
+
+    useEffect(() => {
+        if (!viaje || !userId || viaje.estado === 'FINALIZADO') return;
+
+        console.log('Iniciando verificación periódica del viaje:', viaje.viajeId);
+        const checkViaje = async () => {
+            try {
+                const viajeActualizado = await obtenerViajeActivo(userId);
+                console.log('Estado del viaje actualizado:', viajeActualizado?.estado);
+
+                if (viajeActualizado?.estado === 'FINALIZADO' && !viaje.calificado) {
+                    onViajeUpdate({
+                        ...viaje,
+                        estado: 'FINALIZADO'
+                    });
+                    setMostrarCalificacion(true);
                 }
             } catch (error) {
-                console.error('Error al cargar detalles del viaje:', error);
-                setError('No se pudieron cargar los detalles del viaje');
+                console.error('Error al verificar estado:', error);
             }
         };
 
-        cargarDetallesViaje();
-    }, [viajeId]);
+        const interval = setInterval(checkViaje, 5000);
+        return () => clearInterval(interval);
+    }, [viaje, userId, onViajeUpdate]);
 
-    // Actualizar ubicación del conductor
-    const actualizarUbicacion = useCallback(async () => {
-        try {
-            const ubicacion = await obtenerUltimaUbicacion(viajeId);
-            if (ubicacion && ubicacion.lat && ubicacion.lng) {
-                setUbicacionConductor(ubicacion);
-                setError(null);
-            }
-        } catch (error) {
-            console.error('Error al obtener ubicación:', error);
-            setError('No se pudo actualizar la ubicación del conductor');
-        }
-    }, [viajeId]);
-
-    // Polling de ubicación
     useEffect(() => {
         if (!viaje || viaje.estado === 'FINALIZADO') return;
 
+        const interval = setInterval(async () => {
+            const finalizado = await verificarEstadoViaje();
+            if (finalizado) {
+                clearInterval(interval);
+            }
+        }, POLLING_INTERVAL);
+
+        return () => clearInterval(interval);
+    }, [verificarEstadoViaje, viaje]);
+
+    // Efecto para manejar el cambio de estado inicial
+    useEffect(() => {
+        if (viaje?.estado === 'FINALIZADO' && !viaje.calificado) {
+            setMostrarCalificacion(true);
+        }
+    }, [viaje?.estado, viaje?.calificado]);
+
+    // Actualizar centro del mapa cuando cambia la ubicación
+    useEffect(() => {
+        if (ubicacionConductor) {
+            setMapCenter({
+                lat: Number(ubicacionConductor.lat),
+                lng: Number(ubicacionConductor.lng)
+            });
+        } else if (viaje?.puntoInicioLat && viaje?.puntoInicioLng) {
+            setMapCenter({
+                lat: Number(viaje.puntoInicioLat),
+                lng: Number(viaje.puntoInicioLng)
+            });
+        }
+    }, [ubicacionConductor, viaje]);
+
+    // Calcular ruta
+    useEffect(() => {
+        if (!isLoaded || !viaje || !window.google) return;
+
+        if (viaje.puntoInicioLat && viaje.puntoInicioLng && viaje.puntoFinalLat && viaje.puntoFinalLng) {
+            const directionsService = new window.google.maps.DirectionsService();
+
+            directionsService.route({
+                origin: { lat: Number(viaje.puntoInicioLat), lng: Number(viaje.puntoInicioLng) },
+                destination: { lat: Number(viaje.puntoFinalLat), lng: Number(viaje.puntoFinalLng) },
+                travelMode: window.google.maps.TravelMode.DRIVING,
+            }, (result, status) => {
+                if (status === 'OK') {
+                    setDirections(result);
+                }
+            });
+        }
+    }, [isLoaded, viaje]);
+
+    useEffect(() => {
+        console.log('Estado del viaje:', viaje?.estado);
+        if (viaje?.estado === 'FINALIZADO' && !viaje.calificado) {
+            console.log('Mostrando modal de calificación');
+            setMostrarCalificacion(true);
+        }
+    }, [viaje?.estado, viaje?.calificado]);
+
+    const handleCalificar = async (calificacion) => {
+        try {
+            console.log('Enviando calificación del conductor:', {
+                viajeId: viaje.viajeId,
+                pasajeroId: userId,
+                calificacion
+            });
+    
+            await calificarConductor({
+                viajeId: viaje.viajeId,
+                pasajeroId: userId,
+                calificacion: calificacion.calificacion,
+                comentario: calificacion.comentario || ''
+            });
+    
+            toast.success('¡Gracias por calificar tu viaje!');
+            setMostrarCalificacion(false);
+            
+            if (onViajeUpdate) {
+                onViajeUpdate({
+                    ...viaje,
+                    calificado: true,
+                    estado: 'FINALIZADO'
+                });
+            }
+        } catch (error) {
+            console.error('Error al calificar:', error);
+            toast.error('No se pudo enviar la calificación. Inténtalo de nuevo.');
+        }
+    };
+
+    const actualizarUbicacion = useCallback(async () => {
+        if (!viaje?.viajeId) return;
+
+        try {
+            const data = await obtenerUltimaUbicacion(viaje.viajeId);
+            if (data && data.lat && data.lng) {
+                setUbicacionConductor({
+                    lat: Number(data.lat),
+                    lng: Number(data.lng),
+                    timestamp: new Date(data.timestamp)
+                });
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error:', error);
+            setError('Error al obtener la ubicación del conductor');
+            setIsLoading(false);
+        }
+    }, [viaje?.viajeId]);
+
+    useEffect(() => {
+        if (!viaje || viaje.estado !== 'EN_CURSO') {
+            setIsLoading(false);
+            return;
+        }
+
         actualizarUbicacion();
         const intervalo = setInterval(actualizarUbicacion, 5000);
-
         return () => clearInterval(intervalo);
     }, [actualizarUbicacion, viaje]);
 
-    // Verificar si el viaje ha finalizado
-    useEffect(() => {
-        if (viaje?.estado === 'FINALIZADO' && !mostrarCalificacion) {
-            setMostrarCalificacion(true);
-        }
-    }, [viaje?.estado]);
-
-    if (!viaje) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
-            </div>
-        );
+    if (!isLoaded) {
+        return <div className="text-center py-8">Cargando mapa...</div>;
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold">Seguimiento de Viaje</h2>
-                <p className="text-gray-600">{viaje.nombreRuta}</p>
+        <div className="space-y-6">
+            {/* Info del conductor y estado del viaje */}
+            <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <User className="h-8 w-8 text-gray-400" />
+                        <div>
+                            <h3 className="font-medium">{viaje.nombreConductor}</h3>
+                            <div className="flex items-center text-sm">
+                                <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                                <span>{viaje.calificacionConductor.toFixed(1)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                        viaje.estado === 'EN_CURSO' ? 'bg-green-100 text-green-800' :
+                        viaje.estado === 'FINALIZADO' ? 'bg-gray-100 text-gray-800' :
+                        'bg-yellow-100 text-yellow-800'
+                    }`}>
+                        {viaje.estado}
+                    </span>
+                </div>
             </div>
 
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
-
-            <div className="relative h-96 rounded-lg overflow-hidden mb-6">
+            {/* Mapa */}
+            <div className="h-[400px] relative rounded-lg overflow-hidden border border-gray-200">
                 <GoogleMap
-                    mapContainerStyle={{ width: '100%', height: '100%' }}
-                    center={ubicacionConductor || {
-                        lat: parseFloat(viaje.puntoInicioLat),
-                        lng: parseFloat(viaje.puntoInicioLng)
-                    }}
+                    mapContainerStyle={mapContainerStyle}
+                    center={mapCenter}
                     zoom={15}
+                    options={{
+                        zoomControl: true,
+                        streetViewControl: false,
+                        mapTypeControl: false,
+                        fullscreenControl: false
+                    }}
                 >
                     {ubicacionConductor && (
                         <Marker
@@ -122,16 +257,14 @@ const SeguimientoViaje = ({ userId, viajeId }) => {
                             }}
                         />
                     )}
-
-                    {ruta && (
+                    {directions && (
                         <DirectionsRenderer
-                            directions={ruta}
+                            directions={directions}
                             options={{
                                 suppressMarkers: true,
                                 polylineOptions: {
-                                    strokeColor: '#4285F4',
-                                    strokeWeight: 5,
-                                    strokeOpacity: 0.8
+                                    strokeColor: "#4285F4",
+                                    strokeWeight: 4
                                 }
                             }}
                         />
@@ -139,55 +272,23 @@ const SeguimientoViaje = ({ userId, viajeId }) => {
                 </GoogleMap>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                        <MapPin className="text-blue-500" />
-                        <span className="font-medium">Origen</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{viaje.puntoInicioNombre}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                        <Navigation className="text-green-500" />
-                        <span className="font-medium">Destino</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{viaje.puntoFinalNombre}</p>
-                </div>
-            </div>
-
-            <div className="text-sm text-gray-600">
-                <p>Estado: <span className={`font-medium ${
-                    viaje.estado === 'EN_CURSO' ? 'text-green-600' : 
-                    viaje.estado === 'FINALIZADO' ? 'text-gray-600' : 
-                    'text-yellow-600'
-                }`}>{viaje.estado}</span></p>
+            {/* Info de la parada */}
+            <div className="bg-white rounded-lg shadow p-4">
+                <h4 className="font-medium mb-2">Tu parada</h4>
+                <p className="text-gray-600">{viaje.paradaNombre}</p>
                 {ubicacionConductor && (
-                    <p className="mt-2">
-                        Última actualización: {new Date().toLocaleTimeString()}
+                    <p className="text-sm text-gray-500 mt-2">
+                        Última actualización: {new Date(ubicacionConductor.timestamp).toLocaleTimeString()}
                     </p>
                 )}
             </div>
 
+            {/* Modal de Calificación */}
             {mostrarCalificacion && (
                 <CalificacionModal
-                    viaje={viaje}
+                    isOpen={true}
                     onClose={() => setMostrarCalificacion(false)}
-                    onCalificar={async (calificacion) => {
-                        try {
-                            await calificarConductor({
-                                viajeId: viaje.id,
-                                pasajeroId: userId,
-                                calificacion: calificacion.calificacion,
-                                comentario: calificacion.comentario
-                            });
-                            toast.success('Calificación enviada exitosamente');
-                            setMostrarCalificacion(false);
-                        } catch (error) {
-                            toast.error('Error al enviar la calificación');
-                            console.error('Error:', error);
-                        }
-                    }}
+                    onCalificar={handleCalificar}
                 />
             )}
         </div>

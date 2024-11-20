@@ -67,4 +67,14 @@ public class ViajeService {
     public Viaje guardarViaje(Viaje viaje) {
         return viajeRepository.save(viaje);
     }
+
+
+    public Viaje findByRutaId(Integer rutaId) {
+        // Buscar el viaje más reciente para esta ruta
+        return viajeRepository.findFirstByRuta_RutaIdOrderByFechaInicioDesc(rutaId);
+    }
+
+    public Viaje findByRutaIdAndEstado(Integer rutaId, EstadoViaje estado) {
+        return viajeRepository.findByRuta_RutaIdAndEstado(rutaId, estado);
+    }
 }

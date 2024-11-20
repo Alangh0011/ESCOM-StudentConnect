@@ -4,10 +4,8 @@ import lombok.Data;
 
 @Data
 public class ReservacionRequest {
-    private Long pasajeroId;
-    private Long rutaId;
-    private Long paradaId;
+    private Integer pasajeroId;  // Cambiado de Long a Integer
+    private Integer rutaId;      // Cambiado de Long a Integer
+    private Integer paradaId;    // Cambiado de Long a Integer
     private String tipoRuta;
-
-
 }

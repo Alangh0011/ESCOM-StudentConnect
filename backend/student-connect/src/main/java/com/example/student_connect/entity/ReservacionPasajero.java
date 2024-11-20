@@ -45,5 +45,13 @@ public class ReservacionPasajero {
         }
     }
 
+    // Método helper para mantener la consistencia bidireccional con Parada
+    public void setParada(Parada parada) {
+        this.parada = parada;
+        if (parada != null) {
+            parada.setReservacion(this);
+        }
+    }
+
 
 }

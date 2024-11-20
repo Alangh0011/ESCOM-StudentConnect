@@ -12,6 +12,13 @@ import java.util.List;
 @Repository
 public interface ViajeRepository extends JpaRepository<Viaje, Integer> {
 
+    // Nuevo método para buscar por rutaId y estado
+    Viaje findByRutaRutaIdAndEstado(Integer rutaId, EstadoViaje estado);
+
+    Viaje findFirstByRuta_RutaIdOrderByFechaInicioDesc(Integer rutaId);
+    Viaje findByRuta_RutaIdAndEstado(Integer rutaId, EstadoViaje estado);
+
+
     // Obtener los viajes de un conductor programados para hoy por tipo de estado
     @Query("SELECT v FROM Viaje v WHERE v.conductor.id = :idConductor AND v.ruta.fechaProgramada = CURRENT_DATE AND v.estado = :estado")
     List<Viaje> findByConductorAndFechaProgramadaAndEstado(Integer idConductor, EstadoViaje estado);
