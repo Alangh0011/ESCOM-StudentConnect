@@ -3,7 +3,7 @@ import React from 'react'
 
 const About = () => {
   return (
-<div className="grid grid-cols-1 md:grid-cols-2 items-center justify-center p-8 mt-24 lg:p-14">
+<div className="grid grid-cols-1 md:grid-cols-2 items-center justify-center p-8 lg:p-14">
     <div className="md:col-span-1 flex justify-center">
         <img src="Carpool.jpg" className="w-full h-auto object-cover"/>
     </div>

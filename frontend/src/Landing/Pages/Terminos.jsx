@@ -254,7 +254,7 @@ const Terminos = () => {
             <div className="mt-8">
               <Link 
                 to="/" 
-                className="inline-flex items-center px-6 py-3 bg-tertiary text-white font-medium rounded-lg hover:bg-secundary transition-colors"
+                className="inline-flex items-center no-underline px-6 py-3 bg-tertiary text-white font-medium rounded-lg hover:bg-secundary transition-colors"
               >
                 Volver al Inicio
               </Link>
