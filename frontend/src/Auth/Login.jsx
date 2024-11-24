@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import Hero from './Hero';
 import { Link } from 'react-router-dom';
 import Modal from './Modal';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
+import { Home } from 'lucide-react';
 
 function Login({ setIsLoggedIn }) {
     const history = useHistory();
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [modalError, setModalError] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        email: "", // Cambiado de nombreUsuario a email
+        email: "",
         password: ""
     });
 
@@ -36,8 +37,8 @@ function Login({ setIsLoggedIn }) {
             localStorage.setItem('token', token);
             localStorage.setItem('authorities', JSON.stringify(authorities));
             
-            setIsLoggedIn(true); // Actualiza el estado de isLoggedIn
-            history.push('/home'); // Redirige a la página de inicio después de iniciar sesión
+            setIsLoggedIn(true);
+            history.push('/home');
         } catch (error) {
             console.error('Error:', error);
             setModalMessage('Correo o contraseña incorrectos');
@@ -45,64 +46,107 @@ function Login({ setIsLoggedIn }) {
             setModalOpen(true);
         }
     };
-    
 
     return (
-        <div className="flex flex-col lg:flex-row w-full h-screen bg-gradient-to-bl from-blue-200 via-blue-400 to-blue-700">
-            {/* Contenedor del formulario de inicio de sesión */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center h-full">
-                <div className="bg-white px-6 py-10 sm:px-10 sm:py-20 rounded-3xl border-2 border-gray-100 shadow bg-opacity-50 w-11/12 max-w-md mx-auto lg:max-w-lg lg:mx-0 lg:h-auto lg:flex lg:flex-col lg:justify-center">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-center">Bienvenido</h1>
-                    <p className="text-slate-900 mt-4 text-center font-semibold ">¡Nos emociona formar parte de tu viaje!</p>
-                    <div className="mt-8">
-                        <label className="text-lg font-medium">Correo</label>
-                        <input
-                            className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                            placeholder="Ingresa tu correo"
-                            value={formData.email} // Cambiado de nombreUsuario a email
-                            onChange={handleChange}
-                            name="email" // Cambiado de nombreUsuario a email
-                            type="text"
-                        />
-                    </div>
-                    <div className="mt-8">
-                        <label className="text-lg font-medium">Contraseña</label>
-                        <input
-                            className="w-full border-2 border-gray-100 rounded-md px-4 py-2 mt-2 bg-transparent"
-                            placeholder="Ingresa tu contraseña"
-                            type="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            name="password"
-                        />
-                    </div>
-                    <div className="mt-8 flex justify-between items-center">
-                        <div>
-                            <input type="checkbox" id="remember" className="" />
-                            <label htmlFor="remember" className="ml-2 font-medium">Recordar por 30 días</label>
-                        </div>
-                        <button className="text-pink-800">¿Has olvidado la contraseña?</button>
-                    </div>
-                    <div className="mt-1 flex justify-between items-center">
-                        <p>Todavía no tienes cuenta?</p>
-                        <Link className="text-pink-800" to="/register"> Cree una</Link>
-                    </div>
-                    <div className="mt-8 flex flex-col gap-y-4">
-                        <button 
-                            onClick={handleSubmit}
-                            className="py-2 rounded-xl bg-pink-950 text-white font-bold hover:scale-105 transition-transform"
+        <>
+            {/* Navbar simplificado */}
+            <header className="fixed top-0 left-0 right-0 w-full bg-white transition-all duration-300 z-50 h-16 md:h-20">
+                <div className="max-w-7xl mx-auto px-4 h-full">
+                    <div className="flex items-center justify-between h-full">
+                        {/* Logo */}
+                        <h1 className="text-xl md:text-2xl font-bold">
+                            <Link to="/" className="no-underline text-black">
+                                Student Connect
+                                <span className="cursor-pointer text-primary">.</span>
+                            </Link>
+                        </h1>
+
+                        {/* Home Icon */}
+                        <Link
+                            to="/"
+                            className="flex items-center text-tertiary py-2 px-4 no-underline transition-all gap-2 active:opacity-70"
+                            aria-label="Inicio"
                         >
-                            Iniciar sesión
-                        </button>
+                            <Home className="w-5 h-5" />
+                        </Link>
                     </div>
-                    <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} data={{ error: modalError, message: modalMessage }} />
                 </div>
+            </header>
+
+            {/* Contenido principal */}
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-6xl flex flex-col-reverse md:flex-row shadow-2xl rounded-2xl overflow-hidden">
+                    {/* Panel izquierdo oscuro */}
+                    <div className="w-full md:w-2/5 bg-secundary p-8 md:p-12 text-white flex flex-col justify-center relative min-h-[200px] md:min-h-0">
+                        <div className="relative z-10">
+                            <h2 className="text-2xl md:text-3xl font-semibold mb-4">¿No tienes una cuenta?</h2>
+                            <p className="text-white mb-6 md:mb-8 text-sm md:text-base">
+                                ¡Únete a nosotros! Crea una cuenta y comienza tu viaje con nosotros.
+                            </p>
+                            <Link
+                                to="/register"
+                                className="inline-block no-underline border border-white text-white px-6 md:px-8 py-2 md:py-3 rounded-lg hover:bg-primary hover:text-white active:bg-[#A92D6B] focus:bg-[#A92D6B] transition-colors duration-300 text-sm md:text-base touch-manipulation"
+                            >
+                                Registrarse
+                            </Link>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 to-gray-900/30" />
+                    </div>
+
+                    {/* Panel derecho - Formulario */}
+                    <div className="w-full md:w-3/5 bg-tertiary p-8 md:p-12">
+                        <div className="max-w-md mx-auto">
+                            <h1 className="text-2xl md:text-3xl text-white font-semibold mb-8 md:mb-12">Iniciar Sesión</h1>
+                            
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Campo Email */}
+                                <div className="space-y-2">
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="Correo electrónico"
+                                        className="w-full rounded px-4 py-3 border-b border-gray-300 focus:border-[#ff7c7c] outline-none transition-colors text-sm md:text-base"
+                                        required
+                                    />
+                                </div>
+                                {/* Campo Password */}
+                                <div className="space-y-2">
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            placeholder="Contraseña"
+                                            className="w-full rounded px-4 py-3 border-b border-gray-300 focus:border-[#ff7c7c] outline-none transition-colors text-sm md:text-base"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm md:text-base active:text-gray-700"
+                                        >
+                                            {showPassword ? "Ocultar" : "Mostrar"}
+                                        </button>
+                                    </div>
+                                </div>
+                              
+                                {/* Botón Login */}
+                                <button
+                                    type="submit"
+                                    className="w-full md:w-32 bg-tertiary border border-white text-white px-6 py-2 md:py-3 rounded-lg hover:bg-[#A92D6B] active:bg-[#8B1B4D] focus:bg-[#A92D6B] transition-colors duration-300 text-sm md:text-base touch-manipulation"
+                                >
+                                    Ingresar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} data={{ error: modalError, message: modalMessage }} />
             </div>
-            {/* Lado derecho: Hero en pantallas grandes */}
-            <div className="hidden lg:flex h-full w-1/2 items-center justify-center">
-                <Hero />
-            </div>
-        </div>
+        </>
     );
 }
 
