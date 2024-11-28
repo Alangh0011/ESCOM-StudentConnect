@@ -51,7 +51,8 @@ const Steps = () => {
                         imageSrc="dinero.gif"
                         title="Incentivos para conductores"
                         description="La aplicación cuenta con un sistema de monitoreo y evaluación para asegurar la calidad y seguridad de los viajes.
-                        Los usuarios pueden dejar comentarios y calificar sus experiencias."
+                        Los usuarios pueden dejar comentarios y calificar sus experiencias. 
+                        <br>El pago es únicamente en efectivo "
                     />
                         <Card
                         imageSrc="referirse.gif"

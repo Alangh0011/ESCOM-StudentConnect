@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect}  from 'react';
 import { Link } from 'react-router-dom';
 
 const FAQItem = ({ pregunta, respuesta }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 1);
+  }, []);
+
   
   return (
     <div className="border-b border-gray-200 last:border-none">
@@ -80,11 +85,6 @@ const FAQ = () => {
         id: 11,
         pregunta: "¿Cómo se realiza el pago del servicio?",
         respuesta: "El pago se realiza en efectivo directamente entre el pasajero y el conductor. Al finalizar el viaje, ambas partes deben validar que el pago se ha realizado correctamente.",
-    },
-    {
-        id: 12,
-        pregunta: "¿Qué sucede si el conductor o pasajero no se presenta en el punto de encuentro?",
-        respuesta: "Los pasajeros tienen un tiempo máximo de espera de 5 minutos en cada parada designada. Después de este tiempo, si el pasajero no ha llegado a la hora acordada, el conductor pueden continuar su ruta sin esperar a pasajeros adicionales. ",
     }
   ];
 

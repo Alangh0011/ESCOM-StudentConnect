@@ -1,13 +1,16 @@
-// eslint-disable-next-line no-unused-vars
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useLayoutEffect} from 'react';
+import { Link} from 'react-router-dom';
 
 const Terminos = () => {
+  
+  useLayoutEffect(() => {
+    window.scrollTo(0, 1);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-6 lg:px-20">
-        {/* Breadcrumb - Con padding responsivo */}
-        <div className="pt-20 sm:pt-24 md:pt-28 lg:pt-20 xl:pt-20">
+        <div  className="pt-20 sm:pt-24 md:pt-28 lg:pt-20 xl:pt-20">
           <div className="mb-8">
             <Link to="/" className="text-primary hover:underline">Inicio</Link>
             <span className="mx-2">/</span>
