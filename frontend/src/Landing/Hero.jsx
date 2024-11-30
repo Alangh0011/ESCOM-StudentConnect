@@ -54,14 +54,14 @@ const Hero = () => {
               <div className='flex flex-col sm:flex-row gap-6 justify-center'>
                 <Link
                   to="/register"  
-                  className='flex items-center justify-center no-underline bg-tertiary text-white px-6 py-3 rounded-xl text-lg lg:text-xl hover:bg-tertiary/50 transition-colors'
+                  className='flex items-center justify-center no-underline bg-tertiary text-white px-6 py-3 rounded-xl text-lg lg:text-xl  hover:bg-[#A92D6B] transition-colors'
                 >
                   Regístrate
                   <VscArrowSmallRight className='ml-2 text-2xl' />
                 </Link>
                 <button
                   onClick={(e) => handleClick(e, '#testimonios')}
-                  className='flex items-center justify-center bg-secundary text-white px-8 py-3 rounded-xl text-lg lg:text-xl hover:bg-primary/90 transition-colors'
+                  className='flex items-center justify-center bg-secundary text-white px-8 py-3 rounded-xl text-lg lg:text-xl hover:bg-primary transition-colors'
                 >
                   Conócenos
                 </button>

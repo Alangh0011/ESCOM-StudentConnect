@@ -17,13 +17,13 @@ const PrivacyPolicyModal = ({ isOpen, onAccept, onDecline }) => {
                 <div className="flex justify-end space-x-4">
                     <button
                         onClick={onDecline}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                        className="bg-secundary hover:bg-primary text-white font-bold py-2 px-4 rounded"
                     >
                         Declinar
                     </button>
                     <button
                         onClick={onAccept}
-                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                        className="bg-tertiary hover:bg-[#A92D6B] text-white font-bold py-2 px-4 rounded"
                     >
                         Aceptar
                     </button>

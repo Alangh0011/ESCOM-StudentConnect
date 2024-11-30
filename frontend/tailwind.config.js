@@ -10,7 +10,8 @@ export default {
         primary: '#60a5fa',
         secundary: '#3D67BC',
         tertiary: '#6C1D45',
-        cuarto: '#002d71'
+        cuarto: '#002d71',
+        quinto: '#7aafe0'
         
       }
     },

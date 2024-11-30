@@ -370,9 +370,11 @@ function Register() {
                                         className="w-full rounded px-4 py-3 border-b border-gray-300 focus:border-[#ff7c7c] outline-none transition-colors text-sm md:text-base bg-white"
                                         required
                                     >
-                                        <option value="">Selecciona tu Género</option>
-                                        <option value="masculino">Masculino</option>
-                                        <option value="femenino">Femenino</option>
+                                        <option value="">Selecciona tu sexo</option>
+                                        <option value="hombre">Hombre</option>
+                                        <option value="mujer">Mujer</option>
+                                        <option value="otro">Otro</option>
+                                        <option value="pref">Prefiero no decirlo</option>
                                     </select>
 
                                     <div className="space-y-2">
@@ -497,6 +499,7 @@ function Register() {
                     isOpen={showPrivacyModal}
                     onAccept={handlePrivacyAccept}
                     onDecline={handlePrivacyDecline}
+                    
                 />
             </div>
         </>
