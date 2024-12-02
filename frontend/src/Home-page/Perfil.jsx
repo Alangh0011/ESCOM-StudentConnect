@@ -38,14 +38,12 @@ function Perfil({ userInfo, userRoles, onLogout }) {
             <header className="fixed top-0 left-0 right-0 w-full bg-white transition-all duration-300 z-50 h-16 md:h-20">
                 <div className="max-w-7xl mx-auto px-4 h-full">
                     <div className="flex items-center justify-between h-full">
-                        {/* Logo */}
                         <h1 className="text-xl md:text-2xl font-bold">
                             <Link to="/" className="no-underline text-black">
                                 Student Connect
                                 <span className="cursor-pointer text-primary">.</span>
                             </Link>
                         </h1>
-                        {/* Logout Button with hover effect */}
                         <button
                             onClick={handleLogout}
                             className="group relative inline-flex items-center overflow-hidden px-4 py-2 text-tertiary transition-all hover:text-white active:opacity-70"
@@ -58,12 +56,12 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto px-4 pt-24 md:pt-28">
+            <div className="max-w-7xl mx-auto  pt-16 md:pt-16">
                 <div className="flex flex-col md:flex-row gap-6">
-                    {/* Card de perfil */}
+                    {/* Profile Card - Left */}
                     <div className="md:w-1/5">
-                        <div className="bg-tertiary shadow-sm rounded-xl p-4 h-80">
-                            <div className="flex flex-col items-center justify-center h-full">
+                        <div className="bg-tertiary shadow-sm rounded-xl p-4 min-h-[320px] md:h-[320px]">
+                            <div className="flex flex-col items-center justify-center h-full mt-8 md:mt-0">
                                 <div className="flex flex-col items-center gap-6">
                                     <div className="pt-1">
                                         <img
@@ -81,11 +79,11 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                         </div>
                     </div>
 
-                    {/* Card de información */}
+                    {/* Info Card - Right */}
                     <div className="md:w-4/5">
-                        <div className="bg-gradient-to-r from-cuarto to-secundary rounded-xl p-6 text-white h-80">
+                        <div className="bg-gradient-to-r from-cuarto to-secundary rounded-xl p-6 text-white min-h-[320px] md:h-[320px]">
                             <div className="grid md:grid-cols-2 gap-8">
-                                {/* Información Personal */}
+                                {/* Personal Information */}
                                 <div className="w-full">
                                     <div className="flex items-center gap-2 mb-4 justify-center">
                                         <User className="w-5 h-5" />
@@ -109,7 +107,7 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                                     </div>
                                 </div>
 
-                                {/* Información del vehículo */}
+                                {/* Vehicle Information */}
                                 {userRoles.includes('ROLE_CONDUCTOR') && (
                                     <div className="w-full">
                                         <div className="flex items-center gap-2 mb-4 justify-center">

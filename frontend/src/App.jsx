@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import Login from './Auth/Login';
 import Register from './Auth/Register';
 import Home from './Home-page/Home';
+import Pagina from './Home-page/Pagina';
 import { GoogleMapsProvider } from './GoogleMapsContext';
 import Landing from './Landing/Landing';
 
@@ -71,20 +72,25 @@ function App() {
   return (
     <GoogleMapsProvider>
       <Router>
-        <Switch>
-          <Route path="/login">
-            {isLoggedIn ? <Redirect to="/home" /> : <Login setIsLoggedIn={setIsLoggedIn} />}
-          </Route>
-          <Route path="/register">
-            {isLoggedIn ? <Redirect to="/home" /> : <Register />}
-          </Route>
-          <PrivateRoute path="/home">
-            <Home onLogout={handleLogout} />
-          </PrivateRoute>
-          <Route path="/">
-            <Landing />
-          </Route>
-        </Switch>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-1">
+            <Switch>
+              <Route path="/login">
+                {isLoggedIn ? <Redirect to="/home" /> : <Login setIsLoggedIn={setIsLoggedIn} />}
+              </Route>
+              <Route path="/register">
+                {isLoggedIn ? <Redirect to="/home" /> : <Register />}
+              </Route>
+              <PrivateRoute path="/home">
+                <Home onLogout={handleLogout} />
+              </PrivateRoute>
+              <Route path="/">
+                <Landing />
+              </Route>
+            </Switch>
+          </div>
+          {isLoggedIn && <Pagina onLogout={handleLogout} />}
+        </div>
       </Router>
     </GoogleMapsProvider>
   );
