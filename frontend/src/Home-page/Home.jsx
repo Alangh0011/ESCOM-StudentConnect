@@ -21,14 +21,11 @@ function Home({ onLogout }) {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-
         if (token) {
             try {
                 const decodedToken = jwtDecode(token);
-
                 const roles = decodedToken.roles.map(role => role.authority);
                 setUserRoles(roles);
-
                 setUserInfo({
                     id: decodedToken.id,
                     nombre: decodedToken.nombre,
@@ -43,16 +40,15 @@ function Home({ onLogout }) {
                 });
             } catch (error) {
                 console.error('Error al decodificar el token', error);
-                handleLogout(); // Si hay error con el token, hacer logout
+                handleLogout();
             }
         } else {
             console.error('No se encontró el token en el almacenamiento local. Por favor, inicie sesión de nuevo.');
-            handleLogout(); // Si no hay token, hacer logout
+            handleLogout();
         }
     }, []);
 
     const handleLogout = () => {
-        // Limpiar estados locales
         setUserRoles([]);
         setUserInfo({
             id: null,
@@ -66,33 +62,35 @@ function Home({ onLogout }) {
             email: '',
             calificacion: null
         });
-
-        // Limpiar localStorage
         localStorage.clear();
-        
-        // Llamar a la función onLogout del padre
         onLogout();
     };
 
     return (
-        <div className="container mx-auto p-4">
-            <Perfil 
-                userInfo={userInfo} 
-                userRoles={userRoles} 
-                onLogout={handleLogout} // Pasar la función handleLogout al componente Perfil
-            />
+        <div className="min-h-screen bg-gray-50">
+            {/* Profile section sin container para máximo ancho */}
+            <div className="w-full">
+                <Perfil
+                    userInfo={userInfo}
+                    userRoles={userRoles}
+                    onLogout={handleLogout}
+                />
+            </div>
             
-            {userInfo.id ? (
-                userRoles.includes('ROLE_CONDUCTOR') ? (
-                    <Conductor userId={userInfo.id} />
+            {/* Contenido del conductor/pasajero con container */}
+            <div className="container mx-auto px-4">
+                {userInfo.id ? (
+                    userRoles.includes('ROLE_CONDUCTOR') ? (
+                        <Conductor userId={userInfo.id} />
+                    ) : (
+                        <Pasajero userId={userInfo.id} />
+                    )
                 ) : (
-                    <Pasajero userId={userInfo.id} />
-                )
-            ) : (
-                <p className="text-center mt-4 text-red-500">
-                    El ID del usuario no está disponible. Por favor, inicie sesión de nuevo.
-                </p>
-            )}
+                    <p className="text-center mt-4 text-red-500">
+                        El ID del usuario no está disponible. Por favor, inicie sesión de nuevo.
+                    </p>
+                )}
+            </div>
         </div>
     );
 }

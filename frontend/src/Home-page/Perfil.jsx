@@ -56,10 +56,10 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto  pt-16 md:pt-16">
-                <div className="flex flex-col md:flex-row gap-6">
-                    {/* Profile Card - Left */}
-                    <div className="md:w-1/5">
+            <div className="w-full px-6 md:px-12 pt-24 md:pt-28">
+                <div className="flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto">
+                    {/* Profile Card - Left - Reducido de 4/12 a 3/12 */}
+                    <div className="w-full md:w-3/12">
                         <div className="bg-tertiary shadow-sm rounded-xl p-4 min-h-[320px] md:h-[320px]">
                             <div className="flex flex-col items-center justify-center h-full mt-8 md:mt-0">
                                 <div className="flex flex-col items-center gap-6">
@@ -79,8 +79,8 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                         </div>
                     </div>
 
-                    {/* Info Card - Right */}
-                    <div className="md:w-4/5">
+                    {/* Info Card - Right - Aumentado de 8/12 a 9/12 para compensar */}
+                    <div className="w-full md:w-9/12">
                         <div className="bg-gradient-to-r from-cuarto to-secundary rounded-xl p-6 text-white min-h-[320px] md:h-[320px]">
                             <div className="grid md:grid-cols-2 gap-8">
                                 {/* Personal Information */}
@@ -130,7 +130,6 @@ function Perfil({ userInfo, userRoles, onLogout }) {
                                             <div className="text-center">
                                                 <p className="text-white/70">Color</p>
                                                 <div className="flex items-center gap-2 justify-center">
-                                                    <span className="w-4 h-4 rounded-full bg-red-500"></span>
                                                     <p className="font-medium">{userInfo.color}</p>
                                                 </div>
                                             </div>

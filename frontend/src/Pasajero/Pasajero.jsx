@@ -181,41 +181,47 @@ const Pasajero = ({ userId }) => {
                             Panel del Pasajero
                         </h2>
                         
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                             <button
                                 onClick={() => setSelectedOption('seguimiento')}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`group relative px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
                                     selectedOption === 'seguimiento'
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-white text-green-600 border border-green-600'
+                                        ? 'bg-secundary text-white shadow-lg transform scale-105'
+                                        : 'bg-white text-secundary border-2 border-secundary'
                                 }`}
                             >
-                                <Map className="h-5 w-5 inline mr-2" />
-                                Seguir Ruta
+                                <span className="flex items-center justify-center translate-y-0 skew-y-0 transition duration-500 group-hover:-translate-y-2 group-hover:skew-y-10">
+                                    <Map className="h-5 w-5 mr-2" />
+                                    Seguir Ruta
+                                </span>
                             </button>
-
+    
                             <button
                                 onClick={() => setSelectedOption('reservar')}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`group relative px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
                                     selectedOption === 'reservar'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-blue-600 border border-blue-600'
+                                        ? 'bg-tertiary text-white shadow-lg transform scale-105'
+                                        : 'bg-white text-tertiary border-2 border-tertiary'
                                 }`}
                             >
-                                <Car className="h-5 w-5 inline mr-2" />
-                                Reservar Viaje
+                                <span className="flex items-center justify-center translate-y-0 skew-y-0 transition duration-500 group-hover:-translate-y-2 group-hover:skew-y-10">
+                                    <Car className="h-5 w-5 mr-2" />
+                                    Reservar Viaje
+                                </span>
                             </button>
-
+    
                             <button
                                 onClick={() => setSelectedOption('historial')}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`group relative px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
                                     selectedOption === 'historial'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-white text-purple-600 border border-purple-600'
+                                        ? 'bg-secundary text-white shadow-lg transform scale-105'
+                                        : 'bg-white text-secundary border-2 border-secundary'
                                 }`}
                             >
-                                <History className="h-5 w-5 inline mr-2" />
-                                Historial
+                                <span className="flex items-center justify-center translate-y-0 skew-y-0 transition duration-500 group-hover:-translate-y-2 group-hover:skew-y-10">
+                                    <History className="h-5 w-5 mr-2" />
+                                    Historial
+                                </span>
                             </button>
                         </div>
                     </div>
