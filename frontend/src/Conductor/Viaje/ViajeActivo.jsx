@@ -191,27 +191,22 @@ const ViajeActivo = ({ userId }) => {
         }
     
         try {
-            console.log('Finalizando viaje:', viajeActivo.id);
             await finalizarViaje(viajeActivo.id);
-    
-            // Detener el tracking
             detenerTracking();
             
-            // Actualizar el estado del viaje
+            // Actualizar estado del viaje
             setViajeActivo(prevViaje => ({
                 ...prevViaje,
                 estado: 'FINALIZADO'
             }));
     
             toast.success('Viaje finalizado correctamente');
-    
-            // Mostrar el modal de calificación
+            
+            // Mostrar modal de calificación
             setMostrarCalificacion(true);
-    
         } catch (err) {
             console.error('Error al finalizar viaje:', err);
-            toast.error('Error al finalizar el viaje: ' + 
-                (err.response?.data?.mensaje || err.message || 'Error desconocido'));
+            toast.error('Error al finalizar el viaje');
         }
     };
     
@@ -300,33 +295,37 @@ const ViajeActivo = ({ userId }) => {
                 </div>
             )}
 
-            {mostrarCalificacion && (
+            {mostrarCalificacion && viajeActivo && (
                 <CalificacionModal
-                viaje={viajeActivo}
-                onClose={() => {
-                    setMostrarCalificacion(false);
-                    setViajeActivo(null);
-                    setViajeSeleccionado(null);
-                    // Recargar los viajes del día
-                    cargarViajesHoy();
-                }}
+                    viaje={viajeActivo}
+                    onClose={() => {
+                        setMostrarCalificacion(false);
+                        setViajeActivo(null);
+                        setViajeSeleccionado(null);
+                        cargarViajesHoy();
+                    }}
                     onCalificar={async (calificaciones) => {
                         try {
-                            // Llama al backend para guardar las calificaciones
                             await Promise.all(
-                                calificaciones.map(async (calificacion) => {
-                                    await api.post('/calificaciones/conductor/calificar-pasajero', {
+                                calificaciones.map(calificacion =>
+                                    calificarPasajero({
                                         viajeId: viajeActivo.id,
                                         pasajeroId: calificacion.pasajeroId,
                                         calificacion: calificacion.calificacion,
-                                        comentario: calificacion.comentario,
-                                    });
-                                })
+                                        comentario: calificacion.comentario || ''
+                                    })
+                                )
                             );
+                            
                             toast.success('Calificaciones enviadas correctamente');
+                            setMostrarCalificacion(false);
+                            setViajeActivo(prevViaje => ({
+                                ...prevViaje,
+                                calificadoPorConductor: true
+                            }));
                         } catch (error) {
-                            toast.error('Error al enviar las calificaciones');
                             console.error('Error:', error);
+                            toast.error('Error al enviar las calificaciones');
                         }
                     }}
                 />

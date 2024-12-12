@@ -4,6 +4,11 @@ import RutaCard from './RutaCard';
 import SeguimientoViaje from './Viaje/SeguimientoViaje';
 import HistorialReservaciones from './HistorialReservaciones';
 import Toast from './Toast';
+import { 
+    obtenerRutasDisponibles, 
+    obtenerViajeActivo,
+    crearReservacion 
+} from '../utils/rutaAPI';
 
 const Pasajero = ({ userId }) => {
     const [selectedOption, setSelectedOption] = useState('reservar');
@@ -21,26 +26,13 @@ const Pasajero = ({ userId }) => {
 
     const handleReservacion = async (ruta, parada) => {
         try {
-            const response = await fetch('http://localhost:8080/api/reservaciones/crear', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    pasajeroId: userId,
-                    rutaId: ruta.rutaId,
-                    paradaId: parada.paradaId,
-                    tipoRuta: ruta.tipoRuta.toString()
-                })
+            await crearReservacion({
+                pasajeroId: userId,
+                rutaId: ruta.rutaId,
+                paradaId: parada.paradaId,
+                tipoRuta: ruta.tipoRuta.toString()
             });
-
-            const data = await response.json();
             
-            if (!response.ok) {
-                throw new Error(data.mensaje || 'Error al crear la reservación');
-            }
-
             showToast('Reservación creada exitosamente');
             await cargarDatos();
         } catch (error) {
@@ -52,32 +44,22 @@ const Pasajero = ({ userId }) => {
     const cargarDatos = async () => {
         try {
             setIsLoading(true);
-            const [rutasResponse, viajeActivoResponse] = await Promise.all([
-                fetch('http://localhost:8080/api/reservaciones/proximos-7-dias', {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    },
-                }),
-                fetch(`http://localhost:8080/api/reservaciones/viaje-activo/${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    },
-                })
+            setError(null);
+
+            const [rutasData, viajeData] = await Promise.all([
+                obtenerRutasDisponibles(),
+                obtenerViajeActivo(userId)
             ]);
 
-            const rutasData = await rutasResponse.json();
-            setRutas(rutasData);
+            setRutas(Array.isArray(rutasData) ? rutasData : []);
 
-            if (viajeActivoResponse.ok) {
-                const viajeData = await viajeActivoResponse.json();
-                if (viajeData) {
-                    setViajeActivo(viajeData);
-                    setSelectedOption('seguimiento');
-                }
+            if (viajeData) {
+                setViajeActivo(viajeData);
+                setSelectedOption('seguimiento');
             }
         } catch (error) {
             console.error('Error:', error);
-            showToast('Error al cargar la información', 'error');
+            showToast(error.message || 'Error al cargar la información', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -116,7 +98,7 @@ const Pasajero = ({ userId }) => {
                                 No hay viaje activo
                             </h3>
                             <p className="mt-1 text-sm text-gray-500">
-                                No tienes ningún viaje en curso en este momento
+                                No tienes ningún viaje en curso en este momento. Por favor, realiza una nueva reservación.
                             </p>
                         </div>
                     );
@@ -240,10 +222,10 @@ const Pasajero = ({ userId }) => {
 
             {toast.show && (
                 <Toast 
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast({ show: false, message: '', type: 'success' })}
-                />
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ show: false, message: '', type: 'success' })}
+            />
             )}
         </>
     );

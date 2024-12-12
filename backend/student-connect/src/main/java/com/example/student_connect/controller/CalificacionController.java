@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/calificaciones")
 public class CalificacionController {
@@ -87,6 +89,12 @@ public class CalificacionController {
                         .body(new Mensaje("El viaje debe estar finalizado para calificar"));
             }
 
+            // Verificar si ya existe una calificación
+            if (calificacionService.verificarCalificacionPasajero(viaje.getId(), request.getPasajeroId())) {
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("Ya has calificado este viaje"));
+            }
+
             Pasajero pasajero = usuarioService.obtenerPasajeroPorId(request.getPasajeroId());
             if (pasajero == null) {
                 return ResponseEntity.badRequest()
@@ -100,6 +108,10 @@ public class CalificacionController {
             calificacion.setComentario(request.getComentario());
             calificacionService.guardarCalificacion(calificacion);
 
+            // Marcar el viaje como calificado por el pasajero
+            viaje.marcarCalificadoPorPasajero();
+            viajeService.guardarViaje(viaje);
+
             // Calcular y actualizar el promedio del conductor
             double promedio = calificacionService.calcularPromedioCalificacionesConductor(viaje.getConductor().getId());
             Usuario conductor = viaje.getConductor();
@@ -110,6 +122,26 @@ public class CalificacionController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(new Mensaje("Error al registrar la calificación: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/viaje/{viajeId}/estado")
+    @PreAuthorize("hasAnyRole('PASAJERO', 'CONDUCTOR')")
+    public ResponseEntity<?> obtenerEstadoCalificaciones(@PathVariable Integer viajeId) {
+        try {
+            Viaje viaje = viajeService.obtenerViajePorId(viajeId);
+            if (viaje == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "estado", viaje.getEstado(),
+                    "calificadoPorPasajero", viaje.isCalificadoPorPasajero(),
+                    "calificadoPorConductor", viaje.isCalificadoPorConductor()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new Mensaje("Error al obtener estado de calificaciones: " + e.getMessage()));
         }
     }
 }

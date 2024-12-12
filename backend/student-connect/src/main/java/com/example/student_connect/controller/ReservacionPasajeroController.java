@@ -25,6 +25,7 @@ import com.example.student_connect.security.utils.Mensaje;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -246,15 +247,17 @@ public class ReservacionPasajeroController {
     @GetMapping("/historial/{pasajeroId}")
     public ResponseEntity<?> getHistorialReservaciones(@PathVariable Integer pasajeroId) {
         try {
-            log.info("Obteniendo historial de reservaciones para pasajero ID: {}", pasajeroId);
-
             List<ReservacionPasajero> reservaciones = reservacionPasajeroService
                     .findAllByPasajeroId(pasajeroId);
 
+            // Si no hay reservaciones, devolver lista vacía en lugar de null
+            if (reservaciones == null) {
+                reservaciones = new ArrayList<>();
+            }
+
             List<ReservacionHistorialResponse> response = reservaciones.stream()
                     .map(reservacion -> {
-                        Viaje viaje = viajeService
-                                .findByRutaId(reservacion.getRuta().getRutaId());
+                        Viaje viaje = viajeService.findByRutaId(reservacion.getRuta().getRutaId());
 
                         return new ReservacionHistorialResponse(
                                 reservacion.getIdReservacion(),
@@ -267,8 +270,8 @@ public class ReservacionPasajeroController {
                                 viaje != null ? viaje.getFechaFin() : null,
                                 viaje != null ? viaje.getConductor().getNombre() : "Sin asignar",
                                 viaje != null ? viaje.getConductor().getCalificacion() : 0.0,
-                                reservacion.getParada().getCostoParada(), // Costo de la parada
-                                false // Por defecto no está calificado
+                                reservacion.getParada().getCostoParada(),
+                                viaje != null && viaje.isCalificadoPorPasajero()
                         );
                     })
                     .collect(Collectors.toList());

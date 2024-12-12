@@ -17,6 +17,16 @@ const Ruta = ({ userId }) => {
   const originRef = useRef();
   const destinationRef = useRef();
 
+  const ESCOM_DATA = {
+    nombre: "ESCOM - Escuela Superior de Cómputo - IPN",
+    lat: 19.5046493,
+    lng: -99.146323,
+    location: {
+      lat: 19.5046493,
+      lng: -99.146323
+    }
+  };
+
   const [formData, setFormData] = useState({
     nombreRuta: '',
     fechaProgramada: '',
@@ -36,6 +46,47 @@ const Ruta = ({ userId }) => {
     puntoInicioNombre: '',
     estado: 'PENDIENTE'
   });
+  // Modificar el handleTipoRutaChange
+  const handleTipoRutaChange = (e) => {
+    const tipo = e.target.value;
+    
+    // Limpiar los valores de origin y destination
+    setOrigin(null);
+    setDestination(null);
+    
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        tipoRuta: tipo,
+        puntoInicioLat: null,
+        puntoInicioLng: null,
+        puntoFinalLat: null,
+        puntoFinalLng: null,
+        puntoInicioNombre: '',
+        puntoFinalNombre: ''
+      };
+      
+      if (tipo === 'C') {
+        setDestination(ESCOM_DATA.location);
+        return {
+          ...newData,
+          puntoFinalNombre: ESCOM_DATA.nombre,
+          puntoFinalLat: ESCOM_DATA.lat,
+          puntoFinalLng: ESCOM_DATA.lng
+        };
+      } else if (tipo === 'E') {
+        setOrigin(ESCOM_DATA.location);
+        return {
+          ...newData,
+          puntoInicioNombre: ESCOM_DATA.nombre,
+          puntoInicioLat: ESCOM_DATA.lat,
+          puntoInicioLng: ESCOM_DATA.lng
+        };
+      }
+      
+      return newData;
+    });
+  };
 
   const validarPuntoEscom = useCallback((puntoInicioNombre, puntoFinalNombre) => {
     const nombresEscomValidos = [
@@ -107,43 +158,31 @@ const Ruta = ({ userId }) => {
     }
   }, [origin, destination, isLoaded]);
 
-  const handlePlaceChanged = useCallback((ref, setLocationFunc) => {
-    const place = ref.current?.getPlace();
-    if (place?.geometry?.location) {
-      setError('');
-      setLocationFunc(place.geometry.location);
+  // Modificar el handlePlaceChanged - esta es la versión correcta
+const handlePlaceChanged = useCallback((ref, setLocationFunc) => {
+  const place = ref.current?.getPlace();
+  if (place?.geometry?.location && place?.formatted_address) {
+    setError('');
+    setLocationFunc(place.geometry.location);
 
-      const latitude = place.geometry.location.lat();
-      const longitude = place.geometry.location.lng();
-      const placeName = place.name || place.formatted_address || '';
+    const latitude = place.geometry.location.lat();
+    const longitude = place.geometry.location.lng();
+    const placeName = place.formatted_address;
 
-      setFormData(prevData => {
-        const newData = {
-          ...prevData,
-          puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
-          puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
-          puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
-          puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng,
-          puntoInicioNombre: ref === originRef ? placeName : prevData.puntoInicioNombre,
-          puntoFinalNombre: ref === destinationRef ? placeName : prevData.puntoFinalNombre
-        };
-
-        const validacion = validarPuntoEscom(
-          ref === originRef ? placeName : prevData.puntoInicioNombre,
-          ref === destinationRef ? placeName : prevData.puntoFinalNombre
-        );
-
-        if (!validacion.esValido) {
-          setError("Recuerda: Uno de los puntos debe ser ESCOM");
-        }
-
-        return newData;
-      });
-    } else {
-      console.error("No se pudieron obtener las coordenadas del lugar.");
-      setError("Error al obtener la ubicación");
-    }
-  }, [validarPuntoEscom]);
+    setFormData(prevData => ({
+      ...prevData,
+      puntoInicioLat: ref === originRef ? latitude : prevData.puntoInicioLat,
+      puntoInicioLng: ref === originRef ? longitude : prevData.puntoInicioLng,
+      puntoFinalLat: ref === destinationRef ? latitude : prevData.puntoFinalLat,
+      puntoFinalLng: ref === destinationRef ? longitude : prevData.puntoFinalLng,
+      puntoInicioNombre: ref === originRef ? placeName : prevData.puntoInicioNombre,
+      puntoFinalNombre: ref === destinationRef ? placeName : prevData.puntoFinalNombre
+    }));
+  } else {
+    console.error("No se pudieron obtener las coordenadas del lugar.");
+    setError("Error al obtener la ubicación");
+  }
+}, []);
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
@@ -247,6 +286,7 @@ const Ruta = ({ userId }) => {
         
         {!rutaGuardada ? (
           <form onSubmit={handleFormSubmit} className="space-y-4">
+            {/* Nombre de la Ruta */}
             <div>
               <label className="block font-medium">Nombre de la Ruta</label>
               <input
@@ -259,6 +299,7 @@ const Ruta = ({ userId }) => {
               />
             </div>
 
+            {/* Fecha de Viaje */}
             <div>
               <label className="block font-medium">Fecha de Viaje</label>
               <input
@@ -270,11 +311,12 @@ const Ruta = ({ userId }) => {
               />
             </div>
 
+            {/* Tipo de Ruta */}
             <div>
               <label className="block font-medium">Tipo de Ruta</label>
               <select
                 value={formData.tipoRuta}
-                onChange={(e) => setFormData(prev => ({ ...prev, tipoRuta: e.target.value }))}
+                onChange={handleTipoRutaChange}
                 className="border rounded w-full p-2"
                 required
               >
@@ -284,42 +326,73 @@ const Ruta = ({ userId }) => {
               </select>
             </div>
 
+            {/* Punto de Inicio */}
             <div>
               <label className="block font-medium">Punto de Inicio</label>
               <Autocomplete
                 onLoad={ref => { originRef.current = ref; }}
                 onPlaceChanged={() => handlePlaceChanged(originRef, setOrigin)}
+                options={{
+                  componentRestrictions: { country: 'mx' },
+                  fields: ['formatted_address', 'geometry']
+                }}
               >
                 <input 
                   type="text" 
-                  placeholder={formData.tipoRuta === "E" ? "Debe ser ESCOM" : "Ingresa dirección de inicio"} 
-                  className="border rounded w-full p-2"
+                  value={formData.tipoRuta === 'E' ? ESCOM_DATA.nombre : formData.puntoInicioNombre}
+                  placeholder={formData.tipoRuta === "E" ? "ESCOM" : "Ingresa dirección de inicio"}
+                  className={`border rounded w-full p-2 ${formData.tipoRuta === 'E' ? 'bg-gray-100' : ''}`}
                   required
+                  disabled={formData.tipoRuta === 'E'}
+                  onChange={(e) => {
+                    if (formData.tipoRuta !== 'E') {
+                      setFormData(prev => ({
+                        ...prev,
+                        puntoInicioNombre: e.target.value
+                      }));
+                    }
+                  }}
                 />
               </Autocomplete>
               {formData.tipoRuta === "E" && (
-                <small className="text-gray-500">Para rutas Escuela a Casa, el punto de inicio debe ser ESCOM</small>
+                <small className="text-gray-500">Punto de inicio establecido como ESCOM</small>
               )}
             </div>
 
+            {/* Punto de Destino */}
             <div>
               <label className="block font-medium">Punto de Destino</label>
               <Autocomplete
                 onLoad={ref => { destinationRef.current = ref; }}
                 onPlaceChanged={() => handlePlaceChanged(destinationRef, setDestination)}
+                options={{
+                  componentRestrictions: { country: 'mx' },
+                  fields: ['formatted_address', 'geometry']
+                }}
               >
                 <input 
                   type="text" 
-                  placeholder={formData.tipoRuta === "C" ? "Debe ser ESCOM" : "Ingresa dirección de destino"} 
-                  className="border rounded w-full p-2"
+                  value={formData.tipoRuta === 'C' ? ESCOM_DATA.nombre : formData.puntoFinalNombre}
+                  placeholder={formData.tipoRuta === "C" ? "ESCOM" : "Ingresa dirección de destino"}
+                  className={`border rounded w-full p-2 ${formData.tipoRuta === 'C' ? 'bg-gray-100' : ''}`}
                   required
+                  disabled={formData.tipoRuta === 'C'}
+                  onChange={(e) => {
+                    if (formData.tipoRuta !== 'C') {
+                      setFormData(prev => ({
+                        ...prev,
+                        puntoFinalNombre: e.target.value
+                      }));
+                    }
+                  }}
                 />
               </Autocomplete>
               {formData.tipoRuta === "C" && (
-                <small className="text-gray-500">Para rutas Casa a Escuela, el punto de destino debe ser ESCOM</small>
+                <small className="text-gray-500">Punto de destino establecido como ESCOM</small>
               )}
             </div>
 
+            {/* Resto de campos del formulario */}
             <div>
               <label className="block font-medium">Número de Paradas (máximo 4)</label>
               <input
@@ -332,6 +405,7 @@ const Ruta = ({ userId }) => {
                 required
               />
             </div>
+
             <div>
               <label className="block font-medium">Gasto de gasolina por ruta</label>
               <input
@@ -343,6 +417,7 @@ const Ruta = ({ userId }) => {
                 required
               />
             </div>
+
             <div>
               <label className="block font-medium">Horario de Salida</label>
               <input
@@ -364,22 +439,41 @@ const Ruta = ({ userId }) => {
                 required
               />
             </div>
-            <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Registrar Ruta</button>
+
+            <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded w-full hover:bg-blue-600 transition-colors">
+              Registrar Ruta
+            </button>
           </form>
         ) : (
           rutaGuardada && rutaGuardada.numeroParadas ? (
-            <>
-              {console.log("rutaGuardada en Ruta.jsx antes de renderizar ParadasControl:", rutaGuardada)}
-              <ParadasControl rutaData={rutaGuardada} />
-            </>
+            <ParadasControl rutaData={rutaGuardada} />
           ) : (
             <p>Cargando datos de la ruta...</p>
           )
         )}
       </div>
+
+      {/* Mapa */}
       <div className="w-full lg:w-2/3 h-full lg:h-auto">
-        <GoogleMap mapContainerStyle={mapStyles} zoom={13} center={{ lat: 19.4326, lng: -99.1332 }}>
-          {directionsResponse && <DirectionsRenderer options={{ directions: directionsResponse }} />}
+        <GoogleMap 
+          mapContainerStyle={mapStyles} 
+          zoom={13} 
+          center={{ lat: 19.4326, lng: -99.1332 }}
+          options={{
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: true,
+            zoomControl: true,
+          }}
+        >
+          {directionsResponse && (
+            <DirectionsRenderer 
+              options={{ 
+                directions: directionsResponse,
+                suppressMarkers: false,
+              }} 
+            />
+          )}
         </GoogleMap>
         <div className="mt-4">
           {formData.tiempo && formData.distancia ? (
@@ -390,7 +484,8 @@ const Ruta = ({ userId }) => {
         </div>
       </div>
     </div>
-  );
-};
+);
+
+}
 
 export default Ruta;

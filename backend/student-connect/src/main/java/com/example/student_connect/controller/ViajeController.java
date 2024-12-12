@@ -172,6 +172,33 @@ public class ViajeController {
         return ResponseEntity.ok("Viaje finalizado con éxito: " + viaje.getId());
     }
 
+    // En ViajeController.java
+    @PostMapping("/{viajeId}/notificar-fin")
+    @PreAuthorize("hasRole('CONDUCTOR')")
+    public ResponseEntity<?> notificarFinViaje(@PathVariable Integer viajeId) {
+        try {
+            Viaje viaje = viajeService.obtenerViajePorId(viajeId);
+            if (viaje == null) {
+                return ResponseEntity.notFound().build();
+            }
 
+            // Validar estado
+            if (viaje.getEstado() != EstadoViaje.EN_CURSO) {
+                return ResponseEntity.badRequest()
+                        .body(new Mensaje("El viaje no está en curso"));
+            }
+
+            // Actualizar estado del viaje
+            viaje.cambiarEstado(EstadoViaje.FINALIZADO);
+            viaje.setFechaFin(LocalDateTime.now());
+            viajeService.guardarViaje(viaje);
+
+            return ResponseEntity.ok(new Mensaje("Viaje finalizado exitosamente"));
+        } catch (Exception e) {
+            log.error("Error al finalizar viaje {}: {}", viajeId, e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(new Mensaje("Error al finalizar el viaje"));
+        }
+    }
 
 }

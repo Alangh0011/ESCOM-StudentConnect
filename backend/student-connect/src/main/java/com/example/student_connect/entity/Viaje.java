@@ -45,6 +45,30 @@ public class Viaje {
     @OneToMany(mappedBy = "viaje", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UbicacionConductor> ubicaciones = new ArrayList<>();
 
+    // Cambiar de primitive boolean a Boolean objeto
+    @Column(name = "calificado_por_conductor")
+    private Boolean calificadoPorConductor = false;
+
+    @Column(name = "calificado_por_pasajero")
+    private Boolean calificadoPorPasajero = false;
+
+    public void marcarCalificadoPorConductor() {
+        this.calificadoPorConductor = true;
+    }
+
+    public void marcarCalificadoPorPasajero() {
+        this.calificadoPorPasajero = true;
+    }
+
+    // Getters con valores por defecto
+    public boolean isCalificadoPorConductor() {
+        return calificadoPorConductor != null ? calificadoPorConductor : false;
+    }
+
+    public boolean isCalificadoPorPasajero() {
+        return calificadoPorPasajero != null ? calificadoPorPasajero : false;
+    }
+
     public void addCalificacion(CalificacionViaje calificacion) {
         calificaciones.add(calificacion);
         calificacion.setViaje(this);

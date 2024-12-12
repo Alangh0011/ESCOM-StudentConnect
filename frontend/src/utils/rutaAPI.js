@@ -129,11 +129,50 @@ export const iniciarViaje = async (request) => {
 
 export const finalizarViaje = async (viajeId) => {
     try {
-        const response = await api.post('/viajes/finalizar', { viajeId });
+        const response = await api.post('/viajes/finalizar', { 
+            viajeId,
+            fechaFinalizacion: new Date().toISOString(),
+            estado: 'FINALIZADO',
+            requiereCalificacionConductor: true,
+            requiereCalificacionPasajero: true
+        });
+        
+        await notificarFinViaje(viajeId);
+        
         return response.data;
     } catch (error) {
         console.error('Error al finalizar viaje:', error);
         throw error;
+    }
+};
+
+export const verificarCalificacionesPendientes = async (viajeId, userId, tipo) => {
+    try {
+        const response = await api.get(`/calificaciones/pendientes/${viajeId}`, {
+            params: {
+                userId,
+                tipo // 'CONDUCTOR' o 'PASAJERO'
+            }
+        });
+        
+        return {
+            requiereCalificacion: response.data.requiereCalificacion,
+            calificaciones: response.data.calificaciones || []
+        };
+    } catch (error) {
+        console.error('Error al verificar calificaciones pendientes:', error);
+        return {
+            requiereCalificacion: false,
+            calificaciones: []
+        };
+    }
+};
+
+const notificarFinViaje = async (viajeId) => {
+    try {
+        await api.post(`/viajes/${viajeId}/notificar-fin`);
+    } catch (error) {
+        console.error('Error al notificar fin de viaje:', error);
     }
 };
 
@@ -201,41 +240,65 @@ export const obtenerDetallesViaje = async (viajeId) => {
 
 
 
+// Actualizar la función calificarConductor
 export const calificarConductor = async (calificacionData) => {
     try {
-        console.log('Enviando calificación al conductor:', calificacionData);
         const response = await api.post('/calificaciones/pasajero/calificar-conductor', {
             viajeId: calificacionData.viajeId,
             pasajeroId: calificacionData.pasajeroId,
             calificacion: calificacionData.calificacion,
             comentario: calificacionData.comentario || ''
         });
+        
+        console.log('Respuesta calificación conductor:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error al calificar conductor:', error);
-        throw error;
+        throw new Error(error.response?.data?.mensaje || 'Error al calificar al conductor');
     }
 };
 
 export const obtenerViajeActivo = async (pasajeroId) => {
     try {
-        console.log('Solicitando viaje activo para pasajero:', pasajeroId);
         const response = await api.get(`/reservaciones/viaje-activo/${pasajeroId}`);
-        
-        if (!response.data) return null;
-
-        // Asegurarse de que el estado se procese correctamente
-        const viajeData = {
+        if (!response.data) {
+            return null; // No hay viaje activo
+        }
+        return {
             ...response.data,
-            estado: response.data.estado || 'EN_CURSO',
+            estado: response.data.estado || 'PENDIENTE',
             calificado: response.data.calificado || false
         };
-
-        console.log('Datos del viaje activo:', viajeData);
-        return viajeData;
     } catch (error) {
+        if (error.status === 404) {
+            console.warn('No se encontró viaje activo para el pasajero:', pasajeroId);
+            return null; // Manejo explícito del 404
+        }
         console.error('Error al obtener viaje activo:', error);
-        return null;
+        throw error;
+    }
+};
+
+
+export const obtenerEstadoCompletoViaje = async (viajeId) => {
+    try {
+        const response = await api.get(`/viajes/${viajeId}/estado-completo`);
+        return {
+            estado: response.data.estado,
+            calificaciones: {
+                conductor: {
+                    completada: response.data.calificacionConductorCompletada,
+                    pendiente: response.data.calificacionConductorPendiente
+                },
+                pasajeros: {
+                    completadas: response.data.calificacionesPasajerosCompletadas,
+                    pendientes: response.data.calificacionesPasajerosPendientes
+                }
+            }
+        };
+    } catch (error) {
+        console.error('Error al obtener estado completo del viaje:', error);
+        throw error;
     }
 };
 
@@ -284,9 +347,10 @@ export const crearReservacion = async (reservacionData) => {
     }
 };
 
+// Asegurarse de que esta función esté actualizada
 export const obtenerRutasDisponibles = async () => {
     try {
-        const response = await api.get('/reservaciones/proximos-7-dias');
+        const response = await api.get('/rutas/proximos-7-dias');
         return response.data;
     } catch (error) {
         console.error('Error al obtener rutas disponibles:', error);
@@ -320,4 +384,24 @@ export const verificarEstadoViaje = async (viaje, userId, onViajeUpdate, setMost
     }
 };
 
+// En rutaAPI.js, añadir el nuevo método
+export const verificarEstadoCalificaciones = async (viajeId) => {
+    try {
+        const response = await api.get(`/calificaciones/viaje/${viajeId}/estado`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al verificar estado de calificaciones:', error);
+        throw error;
+    }
+};
 
+// Añadir esta función a rutaAPI.js
+export const obtenerHistorialPasajero = async (pasajeroId) => {
+    try {
+        const response = await api.get(`/reservaciones/historial/${pasajeroId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener historial:', error);
+        throw new Error(error.response?.data?.mensaje || 'Error al obtener el historial');
+    }
+};

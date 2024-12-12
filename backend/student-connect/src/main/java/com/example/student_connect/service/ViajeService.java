@@ -48,14 +48,11 @@ public class ViajeService {
     // Finalizar un viaje
     public Viaje finalizarViaje(Integer viajeId) {
         Viaje viaje = viajeRepository.findById(viajeId)
-                .orElseThrow(() -> new RuntimeException("Viaje no encontrado con ID: " + viajeId));
+                .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
 
-        if (viaje.getEstado() != EstadoViaje.EN_CURSO) {
-            throw new IllegalStateException("Solo se pueden finalizar viajes en curso");
-        }
-
-        viaje.setEstado(EstadoViaje.FINALIZADO);
+        viaje.cambiarEstado(EstadoViaje.FINALIZADO);
         viaje.setFechaFin(LocalDateTime.now());
+
         return viajeRepository.save(viaje);
     }
     // Método para obtener un viaje por ID

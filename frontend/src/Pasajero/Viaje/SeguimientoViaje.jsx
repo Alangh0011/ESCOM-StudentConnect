@@ -4,8 +4,18 @@ import { Map, Navigation, Star, User, Clock } from 'lucide-react';
 import { useGoogleMaps } from '../../GoogleMapsContext';
 import CalificacionModal from './CalificacionModal';
 import { toast } from 'react-toastify';
-import { obtenerUltimaUbicacion, calificarConductor, obtenerViajeActivo, obtenerDetallesViaje  } from '../../utils/rutaAPI';
+import { 
+    obtenerUltimaUbicacion, 
+    calificarConductor, 
+    verificarEstadoCalificaciones 
+} from '../../utils/rutaAPI';
 
+// Constantes
+const POLLING_INTERVAL = 5000;
+const DEFAULT_CENTER = {
+    lat: 19.504394764401038,
+    lng: -99.14698680254465
+};
 
 const mapContainerStyle = {
     width: '100%',
@@ -13,113 +23,117 @@ const mapContainerStyle = {
     borderRadius: '0.5rem'
 };
 
-// Coordenadas por defecto (ESCOM)
-const DEFAULT_CENTER = {
-    lat: 19.504394764401038,
-    lng: -99.14698680254465
-};
-
-const POLLING_INTERVAL = 5000; // 5 segundos
-
 const SeguimientoViaje = ({ userId, viaje, onViajeUpdate }) => {
+    // Estados
     const [ubicacionConductor, setUbicacionConductor] = useState(null);
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [mostrarCalificacion, setMostrarCalificacion] = useState(false);
+    const [calificacionPendiente, setCalificacionPendiente] = useState(false);
     const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
     const [directions, setDirections] = useState(null);
     const { isLoaded } = useGoogleMaps();
 
-    const verificarEstadoViaje = useCallback(async () => {
-        try {
-            const detallesViaje = await obtenerDetallesViaje(viaje.viajeId);
-            console.log('Estado actual del viaje:', detallesViaje.estado);
+    // Funciones de utilidad
+    const actualizarMapCenter = useCallback((lat, lng) => {
+        setMapCenter({
+            lat: Number(lat),
+            lng: Number(lng)
+        });
+    }, []);
 
-            // Si el estado cambió a FINALIZADO y no está calificado
-            if (detallesViaje.estado === 'FINALIZADO' && !detallesViaje.calificado) {
-                if (onViajeUpdate) {
-                    onViajeUpdate({
-                        ...viaje,
-                        estado: 'FINALIZADO'
-                    });
-                }
+    // Verificación del estado del viaje
+    const verificarEstadoViaje = useCallback(async () => {
+        if (!viaje?.viajeId) return;
+
+        try {
+            const estadoViaje = await verificarEstadoCalificaciones(viaje.viajeId);
+            console.log('Estado del viaje:', estadoViaje);
+
+            if (estadoViaje.estado === 'FINALIZADO' && !estadoViaje.calificadoPorPasajero) {
+                setCalificacionPendiente(true);
                 setMostrarCalificacion(true);
-                return true; // El viaje ha finalizado
+                onViajeUpdate?.({
+                    ...viaje,
+                    estado: 'FINALIZADO'
+                });
             }
-            return false; // El viaje aún está en curso
         } catch (error) {
             console.error('Error al verificar estado del viaje:', error);
-            return false;
         }
     }, [viaje, onViajeUpdate]);
 
-    useEffect(() => {
-        if (!viaje || !userId || viaje.estado === 'FINALIZADO') return;
+    // Actualización de ubicación
+    const actualizarUbicacion = useCallback(async () => {
+        if (!viaje?.viajeId || viaje.estado !== 'EN_CURSO') return;
 
-        console.log('Iniciando verificación periódica del viaje:', viaje.viajeId);
-        const checkViaje = async () => {
-            try {
-                const viajeActualizado = await obtenerViajeActivo(userId);
-                console.log('Estado del viaje actualizado:', viajeActualizado?.estado);
-
-                if (viajeActualizado?.estado === 'FINALIZADO' && !viaje.calificado) {
-                    onViajeUpdate({
-                        ...viaje,
-                        estado: 'FINALIZADO'
-                    });
-                    setMostrarCalificacion(true);
-                }
-            } catch (error) {
-                console.error('Error al verificar estado:', error);
+        try {
+            const data = await obtenerUltimaUbicacion(viaje.viajeId);
+            if (data?.lat && data?.lng) {
+                setUbicacionConductor({
+                    lat: Number(data.lat),
+                    lng: Number(data.lng),
+                    timestamp: new Date(data.timestamp)
+                });
+                actualizarMapCenter(data.lat, data.lng);
             }
-        };
+        } catch (error) {
+            console.error('Error al actualizar ubicación:', error);
+            setError('Error al obtener la ubicación del conductor');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [viaje, actualizarMapCenter]);
 
-        const interval = setInterval(checkViaje, 5000);
-        return () => clearInterval(interval);
-    }, [viaje, userId, onViajeUpdate]);
+    // Manejo de calificación
+    const handleCalificar = async (calificacionData) => {
+        try {
+            await calificarConductor({
+                viajeId: viaje.viajeId,
+                pasajeroId: userId,
+                calificacion: calificacionData.calificacion,
+                comentario: calificacionData.comentario || ''
+            });
 
+            toast.success('¡Gracias por calificar tu viaje!');
+            setMostrarCalificacion(false);
+            setCalificacionPendiente(false);
+
+            onViajeUpdate?.({
+                ...viaje,
+                calificadoPorPasajero: true,
+                estado: 'FINALIZADO'
+            });
+        } catch (error) {
+            console.error('Error al calificar:', error);
+            toast.error('Error al enviar la calificación');
+        }
+    };
+
+    // Efectos
     useEffect(() => {
         if (!viaje || viaje.estado === 'FINALIZADO') return;
 
-        const interval = setInterval(async () => {
-            const finalizado = await verificarEstadoViaje();
-            if (finalizado) {
-                clearInterval(interval);
-            }
-        }, POLLING_INTERVAL);
-
-        return () => clearInterval(interval);
+        const intervalEstado = setInterval(verificarEstadoViaje, POLLING_INTERVAL);
+        return () => clearInterval(intervalEstado);
     }, [verificarEstadoViaje, viaje]);
 
-    // Efecto para manejar el cambio de estado inicial
     useEffect(() => {
-        if (viaje?.estado === 'FINALIZADO' && !viaje.calificado) {
-            setMostrarCalificacion(true);
+        if (!viaje || viaje.estado !== 'EN_CURSO') {
+            setIsLoading(false);
+            return;
         }
-    }, [viaje?.estado, viaje?.calificado]);
 
-    // Actualizar centro del mapa cuando cambia la ubicación
-    useEffect(() => {
-        if (ubicacionConductor) {
-            setMapCenter({
-                lat: Number(ubicacionConductor.lat),
-                lng: Number(ubicacionConductor.lng)
-            });
-        } else if (viaje?.puntoInicioLat && viaje?.puntoInicioLng) {
-            setMapCenter({
-                lat: Number(viaje.puntoInicioLat),
-                lng: Number(viaje.puntoInicioLng)
-            });
-        }
-    }, [ubicacionConductor, viaje]);
+        actualizarUbicacion();
+        const intervalUbicacion = setInterval(actualizarUbicacion, POLLING_INTERVAL);
+        return () => clearInterval(intervalUbicacion);
+    }, [actualizarUbicacion, viaje]);
 
-    // Calcular ruta
     useEffect(() => {
         if (!isLoaded || !viaje || !window.google) return;
 
         if (viaje.puntoInicioLat && viaje.puntoInicioLng && viaje.puntoFinalLat && viaje.puntoFinalLng) {
             const directionsService = new window.google.maps.DirectionsService();
-
             directionsService.route({
                 origin: { lat: Number(viaje.puntoInicioLat), lng: Number(viaje.puntoInicioLng) },
                 destination: { lat: Number(viaje.puntoFinalLat), lng: Number(viaje.puntoFinalLng) },
@@ -132,79 +146,20 @@ const SeguimientoViaje = ({ userId, viaje, onViajeUpdate }) => {
         }
     }, [isLoaded, viaje]);
 
-    useEffect(() => {
-        console.log('Estado del viaje:', viaje?.estado);
-        if (viaje?.estado === 'FINALIZADO' && !viaje.calificado) {
-            console.log('Mostrando modal de calificación');
-            setMostrarCalificacion(true);
-        }
-    }, [viaje?.estado, viaje?.calificado]);
-
-    const handleCalificar = async (calificacion) => {
-        try {
-            console.log('Enviando calificación del conductor:', {
-                viajeId: viaje.viajeId,
-                pasajeroId: userId,
-                calificacion
-            });
-    
-            await calificarConductor({
-                viajeId: viaje.viajeId,
-                pasajeroId: userId,
-                calificacion: calificacion.calificacion,
-                comentario: calificacion.comentario || ''
-            });
-    
-            toast.success('¡Gracias por calificar tu viaje!');
-            setMostrarCalificacion(false);
-            
-            if (onViajeUpdate) {
-                onViajeUpdate({
-                    ...viaje,
-                    calificado: true,
-                    estado: 'FINALIZADO'
-                });
-            }
-        } catch (error) {
-            console.error('Error al calificar:', error);
-            toast.error('No se pudo enviar la calificación. Inténtalo de nuevo.');
-        }
-    };
-
-    const actualizarUbicacion = useCallback(async () => {
-        if (!viaje?.viajeId) return;
-
-        try {
-            const data = await obtenerUltimaUbicacion(viaje.viajeId);
-            if (data && data.lat && data.lng) {
-                setUbicacionConductor({
-                    lat: Number(data.lat),
-                    lng: Number(data.lng),
-                    timestamp: new Date(data.timestamp)
-                });
-            }
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error:', error);
-            setError('Error al obtener la ubicación del conductor');
-            setIsLoading(false);
-        }
-    }, [viaje?.viajeId]);
-
-    useEffect(() => {
-        if (!viaje || viaje.estado !== 'EN_CURSO') {
-            setIsLoading(false);
-            return;
-        }
-
-        actualizarUbicacion();
-        const intervalo = setInterval(actualizarUbicacion, 5000);
-        return () => clearInterval(intervalo);
-    }, [actualizarUbicacion, viaje]);
-
     if (!isLoaded) {
         return <div className="text-center py-8">Cargando mapa...</div>;
     }
+
+    const getEstadoClassName = (estado) => {
+        switch (estado) {
+            case 'EN_CURSO':
+                return 'bg-green-100 text-green-800';
+            case 'FINALIZADO':
+                return 'bg-gray-100 text-gray-800';
+            default:
+                return 'bg-yellow-100 text-yellow-800';
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -221,11 +176,7 @@ const SeguimientoViaje = ({ userId, viaje, onViajeUpdate }) => {
                             </div>
                         </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                        viaje.estado === 'EN_CURSO' ? 'bg-green-100 text-green-800' :
-                        viaje.estado === 'FINALIZADO' ? 'bg-gray-100 text-gray-800' :
-                        'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-sm ${getEstadoClassName(viaje.estado)}`}>
                         {viaje.estado}
                     </span>
                 </div>
@@ -284,7 +235,7 @@ const SeguimientoViaje = ({ userId, viaje, onViajeUpdate }) => {
             </div>
 
             {/* Modal de Calificación */}
-            {mostrarCalificacion && (
+            {mostrarCalificacion && calificacionPendiente && (
                 <CalificacionModal
                     isOpen={true}
                     onClose={() => setMostrarCalificacion(false)}

@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CalificacionRepository extends JpaRepository<CalificacionViaje, Integer> {
@@ -33,4 +34,10 @@ public interface CalificacionRepository extends JpaRepository<CalificacionViaje,
     // Calcular promedio de calificaciones de un conductor
     @Query("SELECT AVG(c.calificacion) FROM CalificacionViaje c WHERE c.viaje.conductor.id = :conductorId")
     Double getAverageCalificacionByConductorId(@Param("conductorId") Integer conductorId);
+
+    boolean existsByViajeIdAndPasajeroId(Integer viajeId, Integer pasajeroId);
+
+    boolean existsByViajeIdAndPasajeroIsNotNull(Integer viajeId);
+
+    Optional<CalificacionViaje> findByViajeIdAndPasajeroId(Integer viajeId, Integer pasajeroId);
 }

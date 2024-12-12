@@ -10,7 +10,8 @@ const libraries = ['places', 'directions', 'geometry'];
 export const GoogleMapsProvider = ({ children }) => {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-        libraries,
+        libraries: ['places', 'geometry'],
+        version: "weekly"
     });
 
     // Usar useMemo para evitar re-renders innecesarios
