@@ -210,8 +210,8 @@ function Register() {
             }
     
             const endpoint = formData.roles[0] === "conductor"
-                ? 'http://localhost:8080/auth/nuevo/conductor'
-                : 'http://localhost:8080/auth/nuevo/pasajero';
+                ? 'https://studentconnect-backend.azurewebsites.net/auth/nuevo/conductor'
+                : 'https://studentconnect-backend.azurewebsites.net/auth/nuevo/pasajero';
     
             const response = await axios.post(endpoint, formDataToSend, {
                 headers: {

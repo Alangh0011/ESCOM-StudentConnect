@@ -242,7 +242,7 @@ const handlePlaceChanged = useCallback((ref, setLocationFunc) => {
       };
 
       const response = await axios.post(
-        'http://localhost:8080/api/rutas/nueva',
+        'https://studentconnect-backend.azurewebsites.net/api/rutas/nueva',
         dataToSend,
         {
           headers: {

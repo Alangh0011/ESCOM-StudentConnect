@@ -5,13 +5,13 @@ import { useLoadScript } from '@react-google-maps/api';
 const GoogleMapsContext = createContext(null);
 
 // Incluye todas las bibliotecas que podrías necesitar
-const libraries = ['places', 'directions', 'geometry'];
+const libraries = ['places', 'geometry', 'marker'];
 
 export const GoogleMapsProvider = ({ children }) => {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-        libraries: ['places', 'geometry'],
-        version: "weekly"
+        libraries: ['places', 'geometry', 'marker'],
+        version: "beta"  // Importante para acceder a las características más nuevas
     });
 
     // Usar useMemo para evitar re-renders innecesarios

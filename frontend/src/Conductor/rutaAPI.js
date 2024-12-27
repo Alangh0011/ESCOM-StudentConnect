@@ -6,7 +6,7 @@ export const actualizarDistanciaTotal = async (rutaId, distanciaTotal) => {
       return;
     }
 
-    const response = await fetch(`http://localhost:8080/api/rutas/${rutaId}/actualizarDistancia`, {
+    const response = await fetch(`https://studentconnect-backend.azurewebsites.net/api/rutas/${rutaId}/actualizarDistancia`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

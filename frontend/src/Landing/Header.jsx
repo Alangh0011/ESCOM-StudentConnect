@@ -52,6 +52,7 @@ const Header = ({ location }) => {
       <div className="max-w-7xl mx-auto px-4 h-full">
         <div className="flex items-center h-full">
           {/* Logo */}
+          <img src="/src/assets/Logo_sin_fondo.png" alt="Student Connect Logo" className="h-12" />
           <h1 className="text-2xl font-bold">
             <Link to="/" className="no-underline text-black">
               Student Connect

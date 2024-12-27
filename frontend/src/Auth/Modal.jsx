@@ -1,36 +1,47 @@
 import React from 'react';
 
 const Modal = ({ isOpen, onClose, data }) => {
-    // Función para cerrar el modal
-    const closeModal = () => {
-        onClose();
-    };
+    if (!isOpen) return null;
 
     return (
-        // Fragmento React para envolver el contenido condicional
-        <>
-            {/* Renderiza el modal solo si isOpen es true */}
-            {isOpen && (
-                <div className="fixed inset-0 flex items-center justify-center z-50">
-                    {/* Fondo oscuro detrás del modal */}
-                    <div className="fixed inset-0 bg-black opacity-50"></div>
-                    {/* Contenedor del modal */}
-                    <div className="fixed bg-white p-8 rounded-lg z-50">
-                        {/* Título del modal: Error si hay un error, éxito de lo contrario */}
-                        <h2 className="text-lg font-bold mb-4">{data.error ? 'Error' : 'Success'}</h2>
-                        {/* Mensaje del modal */}
-                        <p className="mb-4">{data.message}</p>
-                        {/* Botón para cerrar el modal */}
-                        <button onClick={closeModal} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Cerrar
-                        </button>
-                    </div>
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+            {/* Overlay */}
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+
+            {/* Modal */}
+            <div className="relative bg-white rounded-xl shadow-2xl w-80 max-w-[90%]">
+                {/* Header */}
+                <div className={`px-6 py-4 border-b ${data.error ? 'bg-red-50' : 'bg-green-50'}`}>
+                    <h3 className={`text-xl font-bold tracking-tight ${
+                        data.error ? 'text-red-700' : 'text-green-700'
+                    }`}>
+                        {data.error ? 'Error' : 'Éxito'}
+                    </h3>
                 </div>
-            )}
-        </>
+
+                {/* Body */}
+                <div className="px-6 py-5">
+                    <p className="text-gray-700 font-medium text-base">
+                        {data.message}
+                    </p>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all duration-200 transform hover:scale-105
+                            ${data.error 
+                                ? 'bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-red-200' 
+                                : 'bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-green-200'
+                            }`}
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 
 export default Modal;
-
-

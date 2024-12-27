@@ -32,7 +32,7 @@ function Login({ setIsLoggedIn }) {
             return;
         }
         try {
-            const response = await axios.post('http://localhost:8080/auth/login', formData);
+            const response = await axios.post('https://studentconnect-backend.azurewebsites.net/auth/login', formData);
             const { token, authorities } = response.data;
             localStorage.setItem('token', token);
             localStorage.setItem('authorities', JSON.stringify(authorities));

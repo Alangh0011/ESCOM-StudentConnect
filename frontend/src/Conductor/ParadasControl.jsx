@@ -276,7 +276,7 @@ const handleCalcularDistanciaYCostos = async () => {
             return;
         }
 
-        const response = await fetch(`http://localhost:8080/api/rutas/${rutaData.rutaId}/paradas`, {
+        const response = await fetch(`https://studentconnect-backend.azurewebsites.net/api/rutas/${rutaData.rutaId}/paradas`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

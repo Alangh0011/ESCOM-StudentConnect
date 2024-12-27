@@ -16,7 +16,7 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
     const fetchVehicleData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/auth/conductor/${userId}/vehiculo`, {
+            const response = await fetch(`https://studentconnect-backend.azurewebsites.net/auth/conductor/${userId}/vehiculo`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -41,7 +41,7 @@ const EditVehicleModal = ({ userId, onClose, onSuccess, onError }) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/auth/conductor/${userId}/editar-vehiculo`, {
+            const response = await fetch(`https://studentconnect-backend.azurewebsites.net/auth/conductor/${userId}/editar-vehiculo`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
