@@ -47,6 +47,13 @@ Desarrollo realizado durante el período 2023-2024 como parte del Trabajo Termin
 - Arquitectura basada en la nube
 - CI/CD mediante GitHub Actions
 
+# Student Connect
+
+## 🌐 Demo
+Puedes acceder a la versión desplegada del proyecto aquí:
+[Student Connect](https://student-connect-frontend.vercel.app) 
+
+
 ## 📸 Capturas de Pantalla
 ![Paneles descriptivos](./imagenes/7.png)
 ![inicio de sesión y registro](./imagenes/2.png)
